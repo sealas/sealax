@@ -8,7 +8,7 @@ use Mix.Config
 config :sealax, Sealax.Repo,
   username: "postgres",
   password: "postgres",
-  database: "seal_server_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "sealax_test#{System.get_env("MIX_TEST_PARTITION")}",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
@@ -20,3 +20,6 @@ config :sealax, SealaxWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :authtoken,
+  token_key: <<137, 144, 234, 6, 5, 22, 168, 94, 77, 224, 206, 199, 91, 164, 37, 223>>

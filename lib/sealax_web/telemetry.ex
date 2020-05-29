@@ -31,11 +31,11 @@ defmodule SealaxWeb.Telemetry do
       ),
 
       # Database Metrics
-      summary("seal_server.repo.query.total_time", unit: {:native, :millisecond}),
-      summary("seal_server.repo.query.decode_time", unit: {:native, :millisecond}),
-      summary("seal_server.repo.query.query_time", unit: {:native, :millisecond}),
-      summary("seal_server.repo.query.queue_time", unit: {:native, :millisecond}),
-      summary("seal_server.repo.query.idle_time", unit: {:native, :millisecond}),
+      summary("sealax.repo.query.total_time", unit: {:native, :millisecond}),
+      summary("sealax.repo.query.decode_time", unit: {:native, :millisecond}),
+      summary("sealax.repo.query.query_time", unit: {:native, :millisecond}),
+      summary("sealax.repo.query.queue_time", unit: {:native, :millisecond}),
+      summary("sealax.repo.query.idle_time", unit: {:native, :millisecond}),
 
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),

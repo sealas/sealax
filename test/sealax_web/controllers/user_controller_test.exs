@@ -1,5 +1,5 @@
 # defmodule Sealax.UserControllerTest do
-#   use Sealax.ConnCase
+#   use SealaxWeb.ConnCase
 #
 #   alias Sealax.Accounts
 #   alias Sealax.Accounts.User

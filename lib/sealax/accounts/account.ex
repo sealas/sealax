@@ -4,6 +4,7 @@ defmodule Sealax.Accounts.Account do
 
   alias Sealax.Accounts.User
 
+  @primary_key {:id, AccountHashId, read_after_writes: true}
   schema "account" do
     belongs_to :user, User
 
@@ -17,12 +18,12 @@ defmodule Sealax.Accounts.Account do
   end
 
   @doc """
-  Changeset for create(). Only allows for type "yubikey" for now.
+  Changeset for create().
   """
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:appkey])
-    |> validate_required(:appkey)
+    |> cast(params, [:appkey, :user_id])
+    |> validate_required([:appkey, :user_id])
   end
 end

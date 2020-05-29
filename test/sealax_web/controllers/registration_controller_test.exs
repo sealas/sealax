@@ -1,5 +1,5 @@
 defmodule Sealax.RegistrationControllerTest do
-  use Sealax.ConnCase
+  use SealaxWeb.ConnCase
 
   import Swoosh.TestAssertions
 

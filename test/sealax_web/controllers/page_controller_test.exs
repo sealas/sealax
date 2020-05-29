@@ -1,5 +1,5 @@
 defmodule Sealax.PageControllerTest do
-  use Sealax.ConnCase
+  use SealaxWeb.ConnCase
 
   # setup do
   #   {:ok, conn: Phoenix.ConnTest.build_conn()}

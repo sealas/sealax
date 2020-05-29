@@ -1,5 +1,5 @@
 defmodule Sealax.AuthControllerTest do
-  use Sealax.ConnCase
+  use SealaxWeb.ConnCase
 
   alias Sealax.Repo
   alias Sealax.Accounts.User

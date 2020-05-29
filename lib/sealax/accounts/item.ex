@@ -6,9 +6,7 @@ defmodule Sealax.Item do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key {:uuid, :binary_id, autogenerate: true}
-  @foreign_key_type Ecto.UUID
-
+  @primary_key {:id, ItemHashId, read_after_writes: true}
   schema "items" do
     field :content, :string
     field :content_type, :string
@@ -19,25 +17,25 @@ defmodule Sealax.Item do
 
     timestamps()
 
-    belongs_to :user, User, foreign_key: :user_uuid, references: :uuid
+    belongs_to :user, User
   end
 
   @doc false
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:content, :content_type, :enc_item_key, :auth_hash, :deleted, :last_user_agent, :user_uuid])
-    |> validate_required([:user_uuid])
+    |> cast(attrs, [:content, :content_type, :enc_item_key, :auth_hash, :deleted, :last_user_agent, :user_id])
+    |> validate_required([:user_id])
   end
 
   def update_changeset(item, attrs) do
     item
-    |> cast(attrs, [:content, :content_type, :enc_item_key, :auth_hash, :deleted, :last_user_agent, :user_uuid])
+    |> cast(attrs, [:content, :content_type, :enc_item_key, :auth_hash, :deleted, :last_user_agent, :user_id])
   end
 
   def sync_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:uuid])
-    # |> validate_required([:user_uuid])
+    |> cast(params, [:id])
+    # |> validate_required([:user_id])
   end
 
   defmodule SyncManager do
@@ -48,12 +46,12 @@ defmodule Sealax.Item do
 
     @min_conflict_interval 1.0
 
-    def sync(conn, user_uuid, items, %{sync_token: input_sync_token, cursor_token: input_cursor_token, limit: limit, content_type: content_type} = _options) do
-      {retrieved_items, cursor_token} = sync_get(user_uuid, input_sync_token, input_cursor_token, limit, content_type)
+    def sync(conn, user_id, items, %{sync_token: input_sync_token, cursor_token: input_cursor_token, limit: limit, content_type: content_type} = _options) do
+      {retrieved_items, cursor_token} = sync_get(user_id, input_sync_token, input_cursor_token, limit, content_type)
 
       last_updated = DateTime.utc_now
 
-      {saved_items, conflicts, retrieved_items} = sync_save(conn, user_uuid, items, retrieved_items)
+      {saved_items, conflicts, retrieved_items} = sync_save(conn, user_id, items, retrieved_items)
 
       sync_token = cond do
         Enum.count(saved_items) > 0 ->
@@ -76,9 +74,9 @@ defmodule Sealax.Item do
       }
     end
 
-    defp sync_get(user_uuid, input_sync_token, input_cursor_token, limit \\ 1000000, content_type \\ nil) do
+    defp sync_get(user_id, input_sync_token, input_cursor_token, limit \\ 1000000, content_type \\ nil) do
       query = (from i in Item,
-        where: i.user_uuid == ^user_uuid)
+        where: i.user_id == ^user_id)
 
       query = cond do
         !is_nil(input_cursor_token) ->
@@ -103,7 +101,7 @@ defmodule Sealax.Item do
 
       items = Repo.all(from i in query, order_by: [desc: i.updated_at])
 
-      count = (from i in query, select: count(i.uuid)) |> Repo.one()
+      count = (from i in query, select: count(i.id)) |> Repo.one()
 
       cursor_token = cond do
         count > limit ->
@@ -116,10 +114,10 @@ defmodule Sealax.Item do
       {items, cursor_token}
     end
 
-    defp sync_save(_conn, _user_uuid, items, retrieved_items) when is_nil(items) or items == [], do: {[], [], retrieved_items}
-    defp sync_save(conn, user_uuid, items, retrieved_items) do
+    defp sync_save(_conn, _user_id, items, retrieved_items) when is_nil(items) or items == [], do: {[], [], retrieved_items}
+    defp sync_save(conn, user_id, items, retrieved_items) do
       {saved_items, conflicts} = Enum.map_reduce(items, [], fn input_item, acc ->
-        {item, is_new_record, conflict} = find_or_create(user_uuid, input_item)
+        {item, is_new_record, conflict} = find_or_create(user_id, input_item)
 
         save_incoming = if !is_new_record do
           incoming_updated_at = case Map.get(input_item, "updated_at") do
@@ -175,15 +173,15 @@ defmodule Sealax.Item do
       {saved_items, conflicts, retrieved_items}
     end
 
-    def find_or_create(user_uuid, input_item) do
-      case Repo.get(Item, input_item["uuid"]) do
+    def find_or_create(user_id, input_item) do
+      case Repo.get(Item, input_item["id"]) do
         nil ->
-          changeset = Item.sync_changeset(%{uuid: input_item["uuid"], user_uuid: user_uuid})
+          changeset = Item.sync_changeset(%{id: input_item["id"], user_id: user_id})
 
           {item, conflict} = case Repo.insert(changeset) do
             {:ok, item} -> {item, nil}
             {:error, _} ->
-              {%Item{}, %{unsaved_item: input_item, type: "uuid_conflict"}}
+              {%Item{}, %{unsaved_item: input_item, type: "id_conflict"}}
           end
 
           {item, true, conflict}

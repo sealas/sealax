@@ -6,7 +6,7 @@ defmodule SealaxWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    key: "_seal_server_key",
+    key: "_sealax_key",
     signing_salt: "WLjMYhdQ"
   ]
 

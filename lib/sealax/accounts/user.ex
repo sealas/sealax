@@ -18,11 +18,8 @@ defmodule Sealax.Accounts.User do
     field :password_backup,      EctoHashedPassword
     field :password_hint_backup, :string
     field :salt,                 :string
-    field :name,                 :string
-    field :locale,               :string, default: "de"
-    field :active,               :boolean, default: false
-    field :activation_code,      :string
     field :recovery_code,        :string
+    field :settings,             :map
 
     timestamps()
   end
@@ -40,21 +37,14 @@ defmodule Sealax.Accounts.User do
 
   @doc """
   Create changeset for registration
-  Registration only requires email, locale and an activation code
   """
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:email, :locale, :activation_code])
+    |> cast(params, [:email, :password, :password_hint, :salt, :settings])
     |> validate_required([:email])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:email)
-  end
-
-  @spec verify_changeset(map) :: %Ecto.Changeset{}
-  def verify_changeset(params) do
-    %__MODULE__{}
-    |> cast(params, [:password, :password_hint, :salt])
   end
 
   @doc """
@@ -65,6 +55,6 @@ defmodule Sealax.Accounts.User do
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
   def create_test_changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :password_hint, :salt, :name, :locale, :active, :activation_code])
+    |> cast(attrs, [:email, :password, :password_hint, :salt, :settings])
   end
 end

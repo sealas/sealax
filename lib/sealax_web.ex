@@ -30,7 +30,7 @@ defmodule SealaxWeb do
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/seal_server_web/templates",
+        root: "lib/sealax_web/templates",
         namespace: SealaxWeb
 
       # Import convenience functions from controllers
