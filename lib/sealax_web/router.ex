@@ -23,13 +23,22 @@ defmodule SealaxWeb.Router do
     plug :verify_token
   end
 
-  scope "/api", SealaxWeb do
+  scope "/items", SealaxWeb do
     pipe_through :api
     pipe_through :auth
+
+    post "/sync", ItemController, :sync
+    post "/backup", ItemController, :backup
+
+    delete "/", ItemController, :destroy
+
+    resources "/", ItemController
   end
 
-  scope "/auth", SealasWeb do
+  scope "/auth", SealaxWeb do
     pipe_through :auth_api
+
+    get "/", AuthController, :index
   end
 
   # Enables LiveDashboard only for development
