@@ -1,27 +1,15 @@
 defmodule Sealax.Accounts.UserTfa do
-  use BaseModel, repo: Sealax.Repo
+  use Ecto.Schema
   import Ecto.Changeset
 
-  alias Sealax.Accounts.User
-
-  schema "user_tfa" do
-    belongs_to :user, User
-
-    field :type,     :string
+  embedded_schema do
+    field :type, :string
     field :auth_key, :string
-
-    timestamps()
   end
 
-  @doc """
-  Changeset for create(). Only allows for type "yubikey" for now.
-  """
-  @spec create_changeset(map) :: %Ecto.Changeset{}
-  def create_changeset(params) do
-    %__MODULE__{}
-    |> cast(params, [:type, :auth_key, :user_id])
-    |> validate_required(:auth_key)
-    |> validate_format(:type, ~r/yubikey/)
+  def changeset(schema, params) do
+    schema
+    |> cast(params, [:type, :auth_key])
   end
 
   @doc """

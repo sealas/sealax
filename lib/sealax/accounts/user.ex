@@ -9,17 +9,17 @@ defmodule Sealax.Accounts.User do
   We only identify users by email. Note that password and password_backup
   are cryptographic hashes, not the original entry!
   """
-  schema "users" do
-    has_many :user_tfa, UserTfa
+  schema "user" do
+    embeds_many :tfa, UserTfa
 
     field :email,                :string
     field :password,             EctoHashedPassword
     field :password_hint,        :string
     field :password_backup,      EctoHashedPassword
     field :password_hint_backup, :string
-    field :salt,                 :string
     field :recovery_code,        :string
     field :settings,             :map
+    field :active,               :boolean
 
     timestamps()
   end
@@ -41,10 +41,18 @@ defmodule Sealax.Accounts.User do
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:email, :password, :password_hint, :salt, :settings])
+    |> cast(params, [:email, :password, :password_hint, :settings])
+    |> cast_embed(:tfa)
     |> validate_required([:email])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:email)
+  end
+
+  @spec update_changeset(map, map) :: %Ecto.Changeset{}
+  def update_changeset(model, params) do
+    model
+    |> cast(params, [:password, :password_hint, :settings, :recovery_code])
+    |> cast_embed(:tfa)
   end
 
   @doc """
@@ -55,6 +63,7 @@ defmodule Sealax.Accounts.User do
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
   def create_test_changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :password_hint, :salt, :settings])
+    |> cast(attrs, [:email, :password, :password_hint, :settings])
+    |> cast_embed(:tfa)
   end
 end
