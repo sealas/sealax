@@ -23,3 +23,6 @@ config :logger, level: :warn
 
 config :authtoken,
   token_key: <<137, 144, 234, 6, 5, 22, 168, 94, 77, 224, 206, 199, 91, 164, 37, 223>>
+
+config :sealax, Sealax.Yubikey,
+  skip_server: true

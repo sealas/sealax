@@ -21,32 +21,13 @@ defmodule Sealax.UserTfaTest do
       user
     end
 
-    def tfa_fixture(user) do
-      {:ok, tfa} = UserTfa.create(Map.put(@valid_attrs, :user, user))
+    def tfa_fixture() do
+      user_tfa_attrs = Map.put(@create_user_attrs, :tfa, [@valid_attrs])
 
-      tfa
-    end
-
-    test "user_tfa/0 returns all tfa keys" do
-      user = user_fixture()
-      tfa  = tfa_fixture(user)
-
-      user_tfas = Repo.preload(user, :user_tfa)
-
-      assert user_tfas.user_tfa() == [tfa]
-    end
-
-    test "create tfa fails with invalid attrs" do
-      user = user_fixture()
-
-      assert {:error, %Ecto.Changeset{}} = UserTfa.create(Map.put(@invalid_attrs, :user, user))
-    end
-
-    test "delete tfa" do
-      user = user_fixture()
-      tfa  = tfa_fixture(user)
-
-      assert UserTfa.delete(tfa) == :ok
+      {:ok, user} = %User{}
+        |> User.create_test_changeset(user_tfa_attrs)
+        |> Repo.insert()
+      user
     end
   end
 

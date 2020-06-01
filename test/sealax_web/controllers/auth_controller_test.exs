@@ -3,7 +3,6 @@ defmodule Sealax.AuthControllerTest do
 
   alias Sealax.Repo
   alias Sealax.Accounts.User
-  alias Sealax.Accounts.UserTfa
 
   @minimum_request_time 200_000
 
@@ -22,8 +21,11 @@ defmodule Sealax.AuthControllerTest do
   end
 
   def fixture(:with_tfa) do
-    user = fixture()
-    {:ok, _tfa}  = UserTfa.create(Map.put(@create_tfa_attrs, :user, user))
+    user_tfa_attrs = Map.put(@create_attrs, :tfa, [@create_tfa_attrs])
+
+    {:ok, user} = %User{}
+      |> User.create_test_changeset(user_tfa_attrs)
+      |> Repo.insert()
     user
   end
 
@@ -35,7 +37,7 @@ defmodule Sealax.AuthControllerTest do
     test "minimum request time", %{conn: conn} do
       time = Time.utc_now()
 
-      get conn, auth_path(conn, :index), @failed_login
+      get conn, Routes.auth_path(conn, :index), @failed_login
 
       diff = Time.diff(Time.utc_now(), time, :microsecond)
       assert diff >= @minimum_request_time
@@ -46,30 +48,30 @@ defmodule Sealax.AuthControllerTest do
     setup [:create_user]
 
     test "successful authentication as a user", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @valid_login
+      conn = get conn, Routes.auth_path(conn, :index), @valid_login
       assert %{"auth" => auth_token} = json_response(conn, 201)
 
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(user_path(conn, :index))
+      |> get(Routes.item_path(conn, :index))
 
       assert json_response(conn, 200)
     end
 
     test "fail to authenticate with wrong password", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @failed_login
+      conn = get conn, Routes.auth_path(conn, :index), @failed_login
       assert json_response(conn, 401) == %{"error" => "auth fail"}
     end
 
     test "get 401 for protected route", %{conn: conn} do
-      conn = get conn, user_path(conn, :index)
+      conn = get conn, Routes.item_path(conn, :index)
 
       assert json_response(conn, 401) == %{"error" => "auth_fail"}
     end
 
     test "deny request with timedout token", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @valid_login
+      conn = get conn, Routes.auth_path(conn, :index), @valid_login
       assert %{"auth" => auth_token} = json_response(conn, 201)
 
       {:ok, token} = AuthToken.decrypt_token(auth_token)
@@ -78,7 +80,7 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(user_path(conn, :index))
+      |> get(Routes.item_path(conn, :index))
 
       assert json_response(conn, 401) == %{"error" => "timeout"}
     end
@@ -91,19 +93,19 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> stale_token)
-      |> get(user_path(conn, :index))
+      |> get(Routes.item_path(conn, :index))
 
       assert json_response(conn, 401) == %{"error" => "needs_refresh"}
 
       # Refresh token
-      conn = get conn, auth_path(conn, :index), %{token: stale_token}
+      conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert %{"auth" => auth_token} = json_response(conn, 201)
 
       # And retry request
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(user_path(conn, :index))
+      |> get(Routes.item_path(conn, :index))
 
       assert json_response(conn, 200)
     end
@@ -116,21 +118,21 @@ defmodule Sealax.AuthControllerTest do
       User.update(user, active: false)
 
       # Refresh token
-      conn = get conn, auth_path(conn, :index), %{token: stale_token}
+      conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert json_response(conn, 401)
 
       User.delete(user)
 
       # Refresh token
-      conn = get conn, auth_path(conn, :index), %{token: stale_token}
+      conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert json_response(conn, 401)
     end
 
     test "refuse refreshing of invalid tokens", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), %{token: nil}
+      conn = get conn, Routes.auth_path(conn, :index), %{token: nil}
       assert json_response(conn, 401)
 
-      conn = get conn, auth_path(conn, :index), %{token: "INVALID TOOOOOKEN"}
+      conn = get conn, Routes.auth_path(conn, :index), %{token: "INVALID TOOOOOKEN"}
       assert json_response(conn, 401)
     end
   end
@@ -139,38 +141,38 @@ defmodule Sealax.AuthControllerTest do
     setup [:create_user_with_tfa]
 
     test "successful authentication with TFA", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @valid_login
+      conn = get conn, Routes.auth_path(conn, :index), @valid_login
       assert %{"tfa" => true, "code" => tfa_code} = json_response(conn, 201)
 
-      conn = get conn, auth_path(conn, :index), %{code: tfa_code, auth_key: @test_yubikey}
+      conn = get conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: @test_yubikey}
       assert %{"auth" => _auth_token} = json_response(conn, 201)
     end
 
     test "fail to authenticate with wrong password", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @failed_login
+      conn = get conn, Routes.auth_path(conn, :index), @failed_login
       assert json_response(conn, 401) == %{"error" => "auth fail"}
     end
 
     test "failed authentication with TFA", %{conn: conn} do
-      conn = get conn, auth_path(conn, :index), @valid_login
+      conn = get conn, Routes.auth_path(conn, :index), @valid_login
       assert %{"tfa" => true, "code" => tfa_code} = json_response(conn, 201)
 
-      conn = get conn, auth_path(conn, :index), %{code: "wrong code!", auth_key: "wrong key!"}
+      conn = get conn, Routes.auth_path(conn, :index), %{code: "wrong code!", auth_key: "wrong key!"}
       assert json_response(conn, 401) == %{"error" => "auth fail"}
 
-      conn = get conn, auth_path(conn, :index), %{code: tfa_code, auth_key: "wrong key!"}
+      conn = get conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: "wrong key!"}
       assert json_response(conn, 401) == %{"error" => "auth fail"}
     end
   end
 
   describe "unvalidated user" do
     test "fail to authenticate with unvalidated user", %{conn: conn} do
-      {:ok, user} = %User{}
-      |> User.create_test_changeset(%{email: "email", activation_code: "code", active: false})
+      {:ok, _user} = %User{}
+      |> User.create_test_changeset(%{email: "email", password: "password", active: false})
       |> Repo.insert()
 
-      conn = get conn, auth_path(conn, :index), %{email: "email", password: "password"}
-      assert %{"error" => "retry_validation", "activation_code" => _code} = json_response(conn, 400)
+      conn = get conn, Routes.auth_path(conn, :index), %{email: "email", password: "password"}
+      assert %{"error" => "inactive"} = json_response(conn, 400)
     end
   end
 

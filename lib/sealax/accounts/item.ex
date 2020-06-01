@@ -1,7 +1,7 @@
-defmodule Sealax.Item do
+defmodule Sealax.Accounts.Item do
   use BaseModel, repo: Sealax.Repo
-  alias Sealax.User
-  alias Sealax.Item
+  alias Sealax.Accounts.Account
+  alias Sealax.Accounts.Item
 
   use Ecto.Schema
   import Ecto.Changeset
@@ -10,14 +10,12 @@ defmodule Sealax.Item do
   schema "items" do
     field :content, :string
     field :content_type, :string
-    field :enc_item_key, :string
-    field :auth_hash, :string
     field :deleted, :boolean, default: false
     field :last_user_agent, :string
 
     timestamps()
 
-    belongs_to :user, User
+    belongs_to :account, Account
   end
 
   @doc false

@@ -51,7 +51,7 @@ defmodule Sealax.Accounts.User do
   @spec update_changeset(map, map) :: %Ecto.Changeset{}
   def update_changeset(model, params) do
     model
-    |> cast(params, [:password, :password_hint, :settings, :recovery_code])
+    |> cast(params, [:password, :password_hint, :settings, :active, :recovery_code])
     |> cast_embed(:tfa)
   end
 
@@ -63,7 +63,7 @@ defmodule Sealax.Accounts.User do
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
   def create_test_changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :password_hint, :settings])
+    |> cast(attrs, [:email, :password, :password_hint, :active, :settings])
     |> cast_embed(:tfa)
   end
 end
