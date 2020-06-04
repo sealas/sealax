@@ -6,7 +6,7 @@ defmodule EctoHashedPassword do
   """
 
   @dialyzer {:nowarn_function, checkpw: 2}
-  @behaviour Ecto.Type
+  use Ecto.Type
   def type, do: :string
 
   @doc """

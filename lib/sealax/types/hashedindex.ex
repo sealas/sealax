@@ -3,7 +3,7 @@ defmodule EctoHashedIndex do
   Ecto type for indexing hash values as UUIDs in Postgres
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
   def type, do: Ecto.UUID
 
   @doc """

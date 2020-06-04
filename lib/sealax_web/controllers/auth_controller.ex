@@ -8,7 +8,6 @@ defmodule SealaxWeb.AuthController do
 
   alias Sealax.Accounts.User
   alias Sealax.Accounts.UserTfa
-  alias Sealax.Repo
 
   action_fallback SealaxWeb.FallbackController
 

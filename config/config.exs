@@ -30,7 +30,7 @@ config :phoenix, :json_library, Jason
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
 
-config :sealax, Sealax.Mailer,
+config :sealax, SealaxWeb.Mailer,
   adapter: Swoosh.Adapters.SMTP,
   from: {"Sealas", "support@sealas.at"}#,
   # embedded_images: %{
