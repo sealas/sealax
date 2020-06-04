@@ -44,9 +44,11 @@ defmodule Sealax.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
 
+      {:timex, "~> 3.6"},
       {:hashids, "~> 2.0"},
       {:swoosh, "~> 0.25"},
       {:phoenix_swoosh, "~> 0.2"},
+      {:gen_smtp, "~> 0.13"},
       {:hackney, "~> 1.0"},
       {:idna, "~> 6.0"},
       {:base_model, "~> 0.3"},
