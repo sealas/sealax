@@ -5,77 +5,58 @@ defmodule Sealax.RegistrationControllerTest do
 
   alias Sealax.Repo
   alias Sealax.Accounts.User
-  alias Sealax.UserMail
 
-  @create_attrs %{email: "some@email.com", password: "some password", active: true}
+  @create_attrs %{email: "some@email.com", password: "some password", verified: true}
+  @create_unverified_attrs %{email: "some@email.com", password: "some password", verified: false}
 
-  @registration_attrs %{email: "some@email.com", locale: "en"}
+  @registration_attrs %{email: "some@email.com", password: "hashed password yall", password_hint: "so secret, mhhhh", appkey: "very encrypted key to your application"}
 
-  @verify_create_attrs %{email: "some@email.com", activation_code: "12344312asdfgZXCV"}
-  @verification_attrs %{password: "hashed password yall", password_hint: "so secret, mhhhh", appkey: "very encrypted key to your application", salt: "salty boi"}
+  describe "verification" do
+    test "get verification code as a new user", %{conn: conn} do
+      @endpoint.subscribe("user:send_verification")
 
-  describe "registration" do
-    test "register as a new user", %{conn: conn} do
-      conn = post conn, registration_path(conn, :create), user: @registration_attrs
-      assert %{"activation_code" => activation_code} = json_response(conn, 201)
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs.email
 
-      assert_email_sent UserMail.verification(%{email: @registration_attrs.email, activation_code: activation_code})
+      assert %{} = json_response(conn, 201)
+      assert_receive %{email: _, verification_code: _}
     end
 
-    test "register with an existing email", %{conn: conn} do
+    test "get verification for an existing email", %{conn: conn} do
       {:ok, user} = %User{}
         |> User.create_test_changeset(@create_attrs)
         |> Repo.insert()
 
-      conn = post conn, registration_path(conn, :create), user: @registration_attrs
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs.email
+
       assert %{"error" => "already_registered"} = json_response(conn, 400)
     end
 
-    test "register with an existing unvalidated email", %{conn: conn} do
-      conn = post conn, registration_path(conn, :create), user: @registration_attrs
-      assert %{"activation_code" => activation_code} = json_response(conn, 201)
-      assert String.length(activation_code) > 1
+    test "get verification for existing unvalidated email", %{conn: conn} do
+      @endpoint.subscribe("user:send_verification")
 
-      conn = post conn, registration_path(conn, :create), user: @registration_attrs
-      assert %{"error" => "retry_validation", "activation_code" => activation_code} = json_response(conn, 400)
-    end
-  end
+      {:ok, user} = %User{}
+        |> User.create_test_changeset(@create_unverified_attrs)
+        |> Repo.insert()
 
-  describe "verification" do
-    def user_fixture() do
-      {:ok, user} = User.create(@verify_create_attrs)
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs.email
 
-      user
+      assert %{"error" => "retry_validation"} = json_response(conn, 400)
     end
 
-    test "confirm verification code", %{conn: conn} do
-      user = user_fixture()
+    test "test verification code", %{conn: conn} do
+      @endpoint.subscribe("user:send_verification")
 
-      conn = get conn, registration_path(conn, :show, @verify_create_attrs.activation_code)
-      assert json_response(conn, 200)
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs.email
+
+      assert_receive %{email: _, verification_code: token}
+
+      conn = get conn, Routes.registration_path(conn, :show, token)
+
+      assert %{"status" => "ok"} = json_response(conn, 200)
+
+      conn = get conn, Routes.registration_path(conn, :show, "invalid token pew pew")
+
+      assert %{"error" => "wrong_code"} = json_response(conn, 400)
     end
-
-    test "don't confirm wrong verification code", %{conn: conn} do
-      user = user_fixture()
-
-      conn = get conn, registration_path(conn, :show, "wrong_code")
-      assert json_response(conn, 400)
-    end
-
-    test "verify registration successful", %{conn: conn} do
-      user = user_fixture()
-
-      conn = post conn, registration_path(conn, :create), %{code: @verify_create_attrs.activation_code, user: @verification_attrs}
-      assert json_response(conn, 201)
-    end
-
-    test "verification fails with wrong code", %{conn: conn} do
-      user = user_fixture()
-
-      conn = post conn, registration_path(conn, :create), %{code: "wrong_code", user: @verification_attrs}
-      assert json_response(conn, 400) == %{"error" => "wrong_code"}
-    end
-
-    # TODO: Quickcheck parameter testing
   end
 end

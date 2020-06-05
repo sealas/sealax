@@ -39,6 +39,7 @@ defmodule SealaxWeb.Router do
     pipe_through :auth_api
 
     get "/", AuthController, :index
+    resources "/registration", RegistrationController
   end
 
   # Enables LiveDashboard only for development
