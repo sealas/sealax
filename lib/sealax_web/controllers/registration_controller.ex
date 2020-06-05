@@ -11,54 +11,33 @@ defmodule SealaxWeb.RegistrationController do
   action_fallback SealaxWeb.FallbackController
 
   @doc """
-  Check if token is still valid
+  Check if token is (still) valid
   """
   @spec show(Plug.Conn.t, %{id: String.t}) :: Plug.Conn.t
   def show(conn, %{"id" => token}) do
-    with {:ok, token} <- Base.url_decode64(token),
-      {:ok, content} <- AuthToken.decrypt_token(token)
-    do
-      case Timex.after?(Timex.now, Timex.from_unix(content["ct"]) |> Timex.shift(minutes: 300)) do
-        false ->
-          conn
-          |> render("status.json", status: "ok")
-        true ->
-          conn
-          |> put_status(:bad_request)
-          |> render("status.json", status: "token_expired")
-      end
-    else
-      err ->
-      conn
-      |> put_status(:bad_request)
-      |> render("error.json", error: "wrong_code")
+    case check_token(token) do
+      {:ok} ->
+        conn
+        |> render("status.json", status: "ok")
+      {:error, :token_expired} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("status.json", status: "token_expired")
+      {:error, :bad_token} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("error.json", error: "bad_token")
     end
-
-    # cond do
-    #   user && !user.verified ->
-    #     conn
-    #     |> render("code.json", email: user.email)
-    #   true ->
-    #     conn
-    #     |> put_status(:bad_request)
-    #     |> render("error.json", error: "wrong_code")
-    # end
   end
 
   @doc """
-  Verify user with provided code
+  Verify user with provided token
   """
-  @spec create(Plug.Conn.t, %{code: String.t, user: %{}}) :: Plug.Conn.t
-  def create(conn, %{"code" => code, "user" => user_params}) do
-    user = User.first(verification_code: code)
-
-    cond do
-      !user || user.verified ->
-        conn
-        |> put_status(:bad_request)
-        |> render("error.json", error: "wrong_code")
-      true ->
-        with {:ok, %User{} = user} <- User.update(user, password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true, verification_code: nil),
+  @spec create(Plug.Conn.t, %{token: String.t, user: %{}}) :: Plug.Conn.t
+  def create(conn, %{"token" => token, "user" => user_params}) do
+    case check_token(token) do
+      {:ok} ->
+        with {:ok, %User{} = user} <- User.create(password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true),
           {:ok, %Account{} = account} <- Account.create(user: user, appkey: user_params["appkey"])
         do
           conn
@@ -69,6 +48,8 @@ defmodule SealaxWeb.RegistrationController do
           |> put_status(:bad_request)
           |> render("error.json", error: err)
         end
+      _ ->
+        show(conn, %{"id" => token})
     end
   end
 
@@ -109,5 +90,21 @@ defmodule SealaxWeb.RegistrationController do
     {:ok, token} = AuthToken.generate_token(user_params)
 
     token = Base.url_encode64(token)
+  end
+
+  defp check_token(token) do
+    with {:ok, token} <- Base.url_decode64(token),
+      {:ok, content} <- AuthToken.decrypt_token(token)
+    do
+      case Timex.after?(Timex.now, Timex.from_unix(content["ct"]) |> Timex.shift(minutes: 300)) do
+        false ->
+          {:ok}
+        true ->
+          {:error, :token_expired}
+      end
+    else
+      err ->
+      {:error, :bad_token}
+    end
   end
 end

@@ -56,7 +56,7 @@ defmodule Sealax.RegistrationControllerTest do
 
       conn = get conn, Routes.registration_path(conn, :show, "invalid token pew pew")
 
-      assert %{"error" => "wrong_code"} = json_response(conn, 400)
+      assert %{"error" => "bad_token"} = json_response(conn, 400)
     end
   end
 end
