@@ -27,7 +27,7 @@ defmodule HashId do
       def encode(id) do
         s = Hashids.new([
           min_len: 8,
-          salt: Application.get_env(:cwp_backend, SealaxWeb.Endpoint)[:hash_salt] <> unquote(salt)
+          salt: Application.get_env(:sealax, SealaxWeb.Endpoint)[:hash_salt] <> unquote(salt)
         ])
 
         Hashids.encode(s, id)
@@ -36,7 +36,7 @@ defmodule HashId do
       def decode(hashid) do
         s = Hashids.new([
           min_len: 8,
-          salt: Application.get_env(:cwp_backend, SealaxWeb.Endpoint)[:hash_salt] <> unquote(salt)
+          salt: Application.get_env(:sealax, SealaxWeb.Endpoint)[:hash_salt] <> unquote(salt)
         ])
 
         Hashids.decode(s, hashid)

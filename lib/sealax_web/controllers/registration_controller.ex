@@ -41,6 +41,8 @@ defmodule SealaxWeb.RegistrationController do
           {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true),
           {:ok, %Account{} = account} <- Account.create(user: user, appkey: user_params["appkey"])
         do
+          Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
+
           conn
           |> put_status(:created)
           |> render("status.json", status: "ok")

@@ -3,6 +3,7 @@ defmodule Sealax.Accounts.Account do
   import Ecto.Changeset
 
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.Account
 
   @primary_key {:id, AccountHashId, read_after_writes: true}
   schema "account" do

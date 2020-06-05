@@ -16,7 +16,8 @@ config :sealax, Sealax.Repo,
 # you can enable the server option below.
 config :sealax, SealaxWeb.Endpoint,
   http: [port: 4002],
-  server: false
+  server: false,
+  hash_salt: "test_hash_yes_yaw"
 
 # Print only warnings and errors during test
 config :logger, level: :warn
