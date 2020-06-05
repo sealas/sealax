@@ -59,4 +59,30 @@ defmodule Sealax.RegistrationControllerTest do
       assert %{"error" => "bad_token"} = json_response(conn, 400)
     end
   end
+
+  describe "registration" do
+    test "registration with valid parameters", %{conn: conn} do
+      @endpoint.subscribe("user:send_verification")
+
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs.email
+
+      assert_receive %{email: _, verification_code: token}
+
+      conn = post conn, Routes.registration_path(conn, :create), %{token: token, user: @registration_attrs}
+
+      assert %{"status" => "ok"} = json_response(conn, 201)
+    end
+
+    test "registration with different email than token", %{conn: conn} do
+      @endpoint.subscribe("user:send_verification")
+
+      conn = post conn, Routes.registration_path(conn, :create), email: "no@u.com"
+
+      assert_receive %{email: _, verification_code: token}
+
+      conn = post conn, Routes.registration_path(conn, :create), %{token: token, user: @registration_attrs}
+
+      assert %{"error" => "wrong_email"} = json_response(conn, 400)
+    end
+  end
 end

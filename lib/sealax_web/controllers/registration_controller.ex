@@ -16,7 +16,7 @@ defmodule SealaxWeb.RegistrationController do
   @spec show(Plug.Conn.t, %{id: String.t}) :: Plug.Conn.t
   def show(conn, %{"id" => token}) do
     case check_token(token) do
-      {:ok} ->
+      {:ok, _} ->
         conn
         |> render("status.json", status: "ok")
       {:error, :token_expired} ->
@@ -31,18 +31,19 @@ defmodule SealaxWeb.RegistrationController do
   end
 
   @doc """
-  Verify user with provided token
+  Register user with provided token
   """
   @spec create(Plug.Conn.t, %{token: String.t, user: %{}}) :: Plug.Conn.t
   def create(conn, %{"token" => token, "user" => user_params}) do
     case check_token(token) do
-      {:ok} ->
-        with {:ok, %User{} = user} <- User.create(password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true),
+      {:ok, email} ->
+        with {:ok} <- check_token_email(user_params["email"], email),
+          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true),
           {:ok, %Account{} = account} <- Account.create(user: user, appkey: user_params["appkey"])
         do
           conn
           |> put_status(:created)
-          |> render("status.json", status: "verify_token")
+          |> render("status.json", status: "ok")
         else
           err -> conn
           |> put_status(:bad_request)
@@ -98,13 +99,20 @@ defmodule SealaxWeb.RegistrationController do
     do
       case Timex.after?(Timex.now, Timex.from_unix(content["ct"]) |> Timex.shift(minutes: 300)) do
         false ->
-          {:ok}
+          {:ok, content["email"]}
         true ->
           {:error, :token_expired}
       end
     else
       err ->
       {:error, :bad_token}
+    end
+  end
+
+  defp check_token_email(token_email, user_email) do
+    cond do
+      token_email == user_email -> {:ok}
+      true -> "wrong_email"
     end
   end
 end
