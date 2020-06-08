@@ -92,7 +92,7 @@ defmodule SealaxWeb.RegistrationController do
 
     {:ok, token} = AuthToken.generate_token(user_params)
 
-    token = Base.url_encode64(token)
+    Base.url_encode64(token)
   end
 
   defp check_token(token) do
@@ -106,7 +106,7 @@ defmodule SealaxWeb.RegistrationController do
           {:error, :token_expired}
       end
     else
-      err ->
+      _err ->
       {:error, :bad_token}
     end
   end

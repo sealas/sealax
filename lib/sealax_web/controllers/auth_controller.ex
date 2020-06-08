@@ -58,8 +58,7 @@ defmodule SealaxWeb.AuthController do
   """
   @spec index(Plug.Conn.t, %{code: String.t, auth_key: String.t}) :: Plug.Conn.t
   def index(conn, %{"code" => code, "auth_key" => auth_key}) do
-    user    = User.first(recovery_code: code)
-    key     = UserTfa.extract_yubikey(auth_key)
+    key = UserTfa.extract_yubikey(auth_key)
 
     with user <- User.first(recovery_code: code),
          user when not is_nil(user) <- user

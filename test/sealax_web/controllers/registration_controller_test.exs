@@ -1,8 +1,6 @@
 defmodule Sealax.RegistrationControllerTest do
   use SealaxWeb.ConnCase
 
-  import Swoosh.TestAssertions
-
   alias Sealax.Repo
   alias Sealax.Accounts.User
 
@@ -22,7 +20,7 @@ defmodule Sealax.RegistrationControllerTest do
     end
 
     test "get verification for an existing email", %{conn: conn} do
-      {:ok, user} = %User{}
+      {:ok, _user} = %User{}
         |> User.create_test_changeset(@create_attrs)
         |> Repo.insert()
 
@@ -34,7 +32,7 @@ defmodule Sealax.RegistrationControllerTest do
     test "get verification for existing unvalidated email", %{conn: conn} do
       @endpoint.subscribe("user:send_verification")
 
-      {:ok, user} = %User{}
+      {:ok, _user} = %User{}
         |> User.create_test_changeset(@create_unverified_attrs)
         |> Repo.insert()
 
