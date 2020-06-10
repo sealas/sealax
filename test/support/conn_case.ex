@@ -17,6 +17,10 @@ defmodule SealaxWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias Sealax.Repo
+  alias Sealax.Accounts.User
+  alias Sealax.Accounts.Account
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -39,6 +43,24 @@ defmodule SealaxWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(Sealax.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    conn = Phoenix.ConnTest.build_conn()
+
+    if tags[:authorized] do
+      {:ok, user} = %User{}
+        |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true})
+        |> Repo.insert()
+
+      {:ok, %Account{} = account} = Account.create(user: user, appkey: "incredibly_encrypted_encryption_key")
+
+      token_content = %{id: user.id}
+      {:ok, token}  = AuthToken.generate_token(token_content)
+
+      conn = conn
+      |> Plug.Conn.put_req_header("authorization", "bearer: " <> token)
+
+      {:ok, conn: conn, account: account, user: user}
+    else
+      {:ok, conn: conn}
+    end
   end
 end
