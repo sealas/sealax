@@ -28,7 +28,6 @@ defmodule SealaxWeb.Router do
     pipe_through :auth
 
     post "/sync", ItemController, :sync
-    post "/backup", ItemController, :backup
 
     delete "/", ItemController, :destroy
 
