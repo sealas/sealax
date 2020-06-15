@@ -10,7 +10,7 @@ defmodule Sealax.Accounts.Account do
     belongs_to :user, User
 
     field :appkey,        :string
-    field :appkey_backup, :string
+    # field :appkey_backup, :string
     field :slug,          :string
     field :active,        :boolean
     field :installed,     :boolean

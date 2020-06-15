@@ -15,8 +15,8 @@ defmodule Sealax.Accounts.User do
     field :email,                :string
     field :password,             EctoHashedPassword
     field :password_hint,        :string
-    field :password_backup,      EctoHashedPassword
-    field :password_hint_backup, :string
+    # field :password_backup,      EctoHashedPassword
+    # field :password_hint_backup, :string
     field :recovery_code,        :string
     field :settings,             :map
     field :active,               :boolean
