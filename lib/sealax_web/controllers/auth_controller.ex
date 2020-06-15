@@ -6,6 +6,7 @@ defmodule SealaxWeb.AuthController do
 
   use SealaxWeb, :controller
 
+  alias Sealax.Accounts.Account
   alias Sealax.Accounts.User
   alias Sealax.Accounts.UserTfa
 
@@ -31,7 +32,9 @@ defmodule SealaxWeb.AuthController do
 
       # Valid Login (no TFA)
       user && user.active && EctoHashedPassword.checkpw(password, user.password) ->
-        token_content = %{id: user.id}
+        account = Account.first(user_id: user.id)
+
+        token_content = %{id: user.id, account_id: account.id}
         {:ok, token}  = AuthToken.generate_token(token_content)
 
         conn
@@ -61,7 +64,8 @@ defmodule SealaxWeb.AuthController do
     key = UserTfa.extract_yubikey(auth_key)
 
     with user <- User.first(recovery_code: code),
-         user when not is_nil(user) <- user
+         user when not is_nil(user) <- user,
+         account <- Account.first(user_id: user.id)
     do
       usertfa = Enum.find(user.tfa, fn tfa -> tfa.auth_key == key end)
 
@@ -70,7 +74,7 @@ defmodule SealaxWeb.AuthController do
         {:ok}        == tfa_match(user, usertfa)   ->
           User.update(user, recovery_code: nil)
 
-          token_content = %{id: user.id}
+          token_content = %{id: user.id, account_id: account.id}
           {:ok, token}  = AuthToken.generate_token(token_content)
 
           conn
