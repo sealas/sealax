@@ -19,9 +19,9 @@ defmodule SealaxWeb.UserSocket do
   def connect(%{"token" => token}, socket, _connect_info) do
     case AuthToken.decrypt_token(token) do
       {:ok, user} ->
-        {:ok, assign(socket, :user, user}
+        {:ok, assign(socket, :user, user)}
       _ ->
-        {:error, "invalid_token"}
+        :error
     end
   end
 
