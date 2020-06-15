@@ -59,7 +59,7 @@ defmodule SealaxWeb.RegistrationController do
   @doc """
   First step to registration, check email, broadcast verification code.
   """
-  @spec create(Plug.Conn.t, %{email: string}) :: Plug.Conn.t
+  @spec create(Plug.Conn.t, %{email: String.t}) :: Plug.Conn.t
   def create(conn, %{"email" => email}) do
     user = User.first(email: email)
 
