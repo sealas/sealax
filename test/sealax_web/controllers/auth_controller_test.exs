@@ -3,6 +3,7 @@ defmodule Sealax.AuthControllerTest do
 
   alias Sealax.Repo
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.Account
 
   @minimum_request_time 200_000
 
@@ -15,8 +16,11 @@ defmodule Sealax.AuthControllerTest do
 
   def fixture() do
     {:ok, user} = %User{}
-      |> User.create_test_changeset(@create_attrs)
-      |> Repo.insert()
+    |> User.create_test_changeset(@create_attrs)
+    |> Repo.insert()
+
+    {:ok, %Account{} = _account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
+
     user
   end
 
@@ -24,8 +28,11 @@ defmodule Sealax.AuthControllerTest do
     user_tfa_attrs = Map.put(@create_attrs, :tfa, [@create_tfa_attrs])
 
     {:ok, user} = %User{}
-      |> User.create_test_changeset(user_tfa_attrs)
-      |> Repo.insert()
+    |> User.create_test_changeset(user_tfa_attrs)
+    |> Repo.insert()
+
+    {:ok, %Account{} = _account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
+
     user
   end
 
@@ -121,6 +128,7 @@ defmodule Sealax.AuthControllerTest do
       conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert json_response(conn, 401)
 
+      Account.delete_where(user: user)
       User.delete(user)
 
       # Refresh token
