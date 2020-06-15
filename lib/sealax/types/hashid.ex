@@ -11,7 +11,7 @@ defmodule HashId do
 
       @doc """
       """
-      def cast(hashid) when is_binary(hashid), do: {:ok, String.downcase(hashid)}
+      def cast(hashid) when is_binary(hashid), do: {:ok, hashid}
       def cast(id), do: Ecto.Type.cast(:integer, id)
 
       def load(id) when is_integer(id) and id > 0, do: {:ok, encode(id)}
