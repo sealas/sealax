@@ -30,9 +30,9 @@ defmodule Sealax.Accounts.Item do
     |> validate_required([:account_id])
   end
 
-  def update_changeset(item, attrs) do
-    item
-    |> cast(attrs, [:content, :content_type, :deleted])
+  def update_changeset(params) do
+    %__MODULE__{}
+    |> cast(params, [:content, :content_type, :deleted])
   end
 
   defmodule SyncManager do
@@ -43,20 +43,19 @@ defmodule Sealax.Accounts.Item do
 
     @min_conflict_interval 1.0
 
-    def sync(account_id, item) do
-      server_item = Item.first(account_id: account_id, id: item.id)
+    def sync(account_id, item_id, item) do
+      server_item = Item.first(account_id: account_id, id: item_id)
 
-      incoming_updated_at = case Map.get(item, :updated_at) do
+      incoming_updated_at = case Map.get(item, "updated_at") do
         nil -> 0
         datetime -> Timex.to_unix(datetime)
       end
 
-      difference = incoming_updated_at - Timex.to_unix(item.updated_at)
+      difference = incoming_updated_at - Timex.to_unix(server_item.updated_at)
 
       conflict =
         cond do
-        difference < 0 -> abs(difference) < @min_conflict_interval
-        difference > 0 -> abs(difference) < @min_conflict_interval
+        difference != 0 -> abs(difference) > @min_conflict_interval
         true -> false
       end
 
@@ -64,19 +63,16 @@ defmodule Sealax.Accounts.Item do
         false ->
           {:conflict, %{server_item: server_item, type: "sync_conflict"}}
         _ ->
-          item = case item.deleted do
+          case Map.get(item, "deleted") do
             true ->
-              {:ok, deleted_item} = Item.update_changeset(server_item, %{
+              Item.update_changeset(server_item, %{
                 deleted: true,
                 content: nil
               })
               |> Repo.update()
-
-              deleted_item
-            false -> Item.update(server_item, item)
+            _ ->
+              Item.update(server_item, item)
           end
-
-          {:ok}
       end
     end
   end

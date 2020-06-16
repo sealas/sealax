@@ -6,12 +6,8 @@ defmodule SealaxWeb.ItemControllerTest do
   require Logger
 
   @create_attrs %{
-    "content_type" => "",
+    "content_type" => "invoice",
     "content" => "encrypted_content"
-  }
-  @update_attrs %{
-    "content_type" => "",
-    "content" => "new_encrypted_content"
   }
 
   describe "create items" do
@@ -51,9 +47,28 @@ defmodule SealaxWeb.ItemControllerTest do
     end
 
     test "update item", %{conn: conn, item: item} do
-      conn = put conn, Routes.item_path(conn, :update, item.id), item: item
+      conn = put conn, Routes.item_path(conn, :update, item.id), item: %{
+        "content_type" => "new_type",
+        "content" => "new_stuff",
+        "updated_at" => item.updated_at,
+        "id" => item.id
+      }
 
-      assert %{"status" => "ok"} == json_response(conn, 201)
+      assert %{"item" => updated_item} = json_response(conn, 201)
+      assert updated_item["id"] == item.id
+      assert updated_item["updated_at"] != item.updated_at
+    end
+
+    test "update outdated item causes conflict", %{conn: conn, item: item} do
+      conn = put conn, Routes.item_path(conn, :update, item.id), item: %{
+        "content_type" => "new_type",
+        "content" => "new_stuff",
+        "updated_at" => Timex.shift(item.updated_at, minutes: -300),
+        "id" => item.id
+      }
+
+      assert %{"type" => type, "server_item" => updated_item} = json_response(conn, 400)
+      assert type == "sync_conflict"
     end
   end
 

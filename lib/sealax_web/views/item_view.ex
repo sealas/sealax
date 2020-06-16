@@ -11,6 +11,10 @@ defmodule SealaxWeb.ItemView do
     %{item: render_one(item, ItemView, "item.json")}
   end
 
+  def render("conflict.json", %{conflict: conflict}) do
+    %{type: conflict.type, server_item: render_one(conflict.server_item, ItemView, "item.json")}
+  end
+
   def render("item.json", %{item: item}) do
     %{id: item.id,
       content: item.content,

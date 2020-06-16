@@ -21,7 +21,16 @@ defmodule SealaxWeb.ItemController do
   def update(conn, %{"id" => id, "item" => params}) do
     account_id = get_account(conn)
 
-    Item.SyncManager.sync(account_id, params)
+    case Item.SyncManager.sync(account_id, id, params) do
+      {:ok, item} ->
+        conn
+        |> put_status(:created)
+        |> render("show.json", item: item)
+      {:conflict, conflict} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("conflict.json", conflict: conflict)
+    end
   end
 
   def create(conn, %{"item" => params}) do
