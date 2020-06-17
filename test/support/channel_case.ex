@@ -17,11 +17,17 @@ defmodule SealaxWeb.ChannelCase do
 
   use ExUnit.CaseTemplate
 
+  alias Sealax.Repo
+  alias Sealax.Accounts.User
+  alias Sealax.Accounts.Account
+
   using do
     quote do
       # Import conveniences for testing with channels
       import Phoenix.ChannelTest
       import SealaxWeb.ChannelCase
+
+      require Logger
 
       # The default endpoint for testing
       @endpoint SealaxWeb.Endpoint
@@ -35,6 +41,19 @@ defmodule SealaxWeb.ChannelCase do
       Ecto.Adapters.SQL.Sandbox.mode(Sealax.Repo, {:shared, self()})
     end
 
-    :ok
+    if tags[:authorized] do
+      {:ok, user} = %User{}
+      |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true})
+      |> Repo.insert()
+
+      {:ok, %Account{} = account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
+
+      token_content = %{id: user.id, account_id: account.id}
+      {:ok, token}  = AuthToken.generate_token(token_content)
+
+      {:ok, account: account, user: user, token: token}
+    else
+      :ok
+    end
   end
 end
