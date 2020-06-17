@@ -36,7 +36,6 @@ defmodule Sealax.Accounts.Item do
   end
 
   defmodule SyncManager do
-    import Ecto.Query
     require Logger
 
     alias Sealax.Repo

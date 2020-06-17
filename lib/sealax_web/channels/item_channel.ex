@@ -1,7 +1,6 @@
 defmodule SealaxWeb.ItemChannel do
   use SealaxWeb, :channel
 
-  alias Sealax.Repo
   alias Sealax.Accounts.Item
 
   def join("item:lobby", _, _), do: {:error, %{reason: "no_lobby"}}
@@ -38,8 +37,14 @@ defmodule SealaxWeb.ItemChannel do
     {:noreply, socket}
   end
 
-  def handle_in("update_item", payload, %{assigns: %{user: user}} = socket) do
-    # broadcast socket, "update_item", item
+  def handle_in("update_item", %{"id" => id, "item" => params}, %{assigns: %{user: user}} = socket) do
+    case Item.SyncManager.sync(user["account_id"], id, params) do
+      {:ok, item} ->
+        broadcast socket, "update_item", %{item: item}
+      {:conflict, conflict} ->
+        push(socket, "update_item_error", %{conflict: conflict})
+    end
+
     {:noreply, socket}
   end
 

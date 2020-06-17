@@ -1,7 +1,8 @@
 defmodule SealaxWeb.ItemController do
   use SealaxWeb, :controller
 
-  alias Sealax.Repo
+  alias SealaxWeb.Endpoint
+
   alias Sealax.Accounts.Item
 
   action_fallback SealaxWeb.FallbackController
@@ -23,6 +24,8 @@ defmodule SealaxWeb.ItemController do
 
     case Item.SyncManager.sync(account_id, id, params) do
       {:ok, item} ->
+        Endpoint.broadcast("item:" <> account_id, "update_item", item)
+
         conn
         |> put_status(:created)
         |> render("show.json", item: item)
@@ -41,6 +44,8 @@ defmodule SealaxWeb.ItemController do
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
+        Endpoint.broadcast("item:" <> account_id, "new_item", item)
+
         conn
         |> put_status(:created)
         |> render("show.json", item: item)
@@ -60,6 +65,8 @@ defmodule SealaxWeb.ItemController do
         |> put_status(:bad_request)
         |> render("error.json", error: "cant_delete")
       {:ok, _} ->
+        Endpoint.broadcast("item:" <> account_id, "delete_item", %{id: id})
+
         conn
         |> put_status(:created)
         |> render("status.json", status: "ok")

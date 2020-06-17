@@ -46,7 +46,7 @@ defmodule SealaxWeb.ItemChannelTest do
       %{socket: socket, item: item}
     end
 
-    test "get all items on join", %{socket: socket} do
+    test "get all items on join" do
       assert_push "all_items", %{items: items}
       assert Enum.count(items) == 1
     end
@@ -66,6 +66,34 @@ defmodule SealaxWeb.ItemChannelTest do
       push socket, "add_item", %{item: @create_attrs}
 
       assert_broadcast "add_item", %{item: item}
+    end
+
+    test "update item", %{socket: socket, item: item} do
+      Process.sleep(1000)
+
+      push socket, "update_item", %{id: item.id, item: %{
+        "content_type" => "new_type",
+        "content" => "new_stuff",
+        "updated_at" => item.updated_at,
+        "id" => item.id
+      }}
+
+      assert_broadcast "update_item", %{item: updated_item}
+      assert updated_item.id == item.id
+      assert updated_item.updated_at != item.updated_at
+    end
+
+    test "update outdated item causes conflict", %{socket: socket, item: item} do
+      push socket, "update_item", %{id: item.id, item: %{
+        "content_type" => "new_type",
+        "content" => "new_stuff",
+        "updated_at" => Timex.shift(item.updated_at, minutes: -300),
+        "id" => item.id
+      }}
+
+      assert_push "update_item_error", %{conflict: %{type: type, server_item: updated_item}}
+
+      assert type == "sync_conflict"
     end
   end
 end
