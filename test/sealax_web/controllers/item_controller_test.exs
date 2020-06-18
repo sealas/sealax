@@ -1,6 +1,9 @@
 defmodule SealaxWeb.ItemControllerTest do
   use SealaxWeb.ConnCase
 
+  alias SealaxWeb.UserSocket
+  alias SealaxWeb.ItemChannel
+
   alias Sealax.Accounts.Item
 
   require Logger
@@ -23,7 +26,19 @@ defmodule SealaxWeb.ItemControllerTest do
 
   describe "get and manipulate items" do
     @describetag :authorized
-    setup [:create_item]
+    setup (context) do
+      create = Map.put(@create_attrs, "account_id", context.account.id)
+      {:ok, item} = Item.create(create)
+
+      {:ok, socket} = Phoenix.ChannelTest.connect(
+        UserSocket,
+        %{"token" => context.token}
+      )
+      {:ok, _, socket} = socket
+      |> subscribe_and_join(ItemChannel, "item:" <> context.account.id)
+
+      {:ok, item: item, socket: socket}
+    end
 
     test "get all items", %{conn: conn} do
       conn = get conn, Routes.item_path(conn, :index)
@@ -36,6 +51,8 @@ defmodule SealaxWeb.ItemControllerTest do
       conn = delete conn, Routes.item_path(conn, :delete, item.id)
 
       assert %{"status" => "ok"} == json_response(conn, 201)
+      assert_broadcast "delete_item", %{id: id}
+      assert id == item.id
 
       conn = delete conn, Routes.item_path(conn, :delete, item.id)
 
@@ -57,6 +74,8 @@ defmodule SealaxWeb.ItemControllerTest do
       assert %{"item" => updated_item} = json_response(conn, 201)
       assert updated_item["id"] == item.id
       assert updated_item["updated_at"] != item.updated_at
+
+      assert_broadcast "update_item", %{item: _}
     end
 
     test "update outdated item causes conflict", %{conn: conn, item: item} do
@@ -70,13 +89,5 @@ defmodule SealaxWeb.ItemControllerTest do
       assert %{"type" => type, "server_item" => updated_item} = json_response(conn, 400)
       assert type == "sync_conflict"
     end
-  end
-
-  defp create_item(context) do
-    create = Map.put(@create_attrs, "account_id", context.account.id)
-
-    {:ok, item} = Item.create(create)
-
-    {:ok, item: item}
   end
 end

@@ -24,7 +24,7 @@ defmodule SealaxWeb.ItemController do
 
     case Item.SyncManager.sync(account_id, id, params) do
       {:ok, item} ->
-        Endpoint.broadcast("item:" <> account_id, "update_item", item)
+        Endpoint.broadcast("item:" <> account_id, "update_item", %{item: item})
 
         conn
         |> put_status(:created)
@@ -44,7 +44,7 @@ defmodule SealaxWeb.ItemController do
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
-        Endpoint.broadcast("item:" <> account_id, "new_item", item)
+        Endpoint.broadcast("item:" <> account_id, "new_item", %{item: item})
 
         conn
         |> put_status(:created)

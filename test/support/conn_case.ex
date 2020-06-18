@@ -58,7 +58,7 @@ defmodule SealaxWeb.ConnCase do
       conn = conn
       |> Plug.Conn.put_req_header("authorization", "bearer: " <> token)
 
-      {:ok, conn: conn, account: account, user: user}
+      {:ok, conn: conn, account: account, user: user, token: token}
     else
       {:ok, conn: conn}
     end
