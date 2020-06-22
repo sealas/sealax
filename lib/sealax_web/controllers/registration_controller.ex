@@ -31,6 +31,32 @@ defmodule SealaxWeb.RegistrationController do
   end
 
   @doc """
+  Register user with provided token to an existing account
+  """
+  @spec create(Plug.Conn.t, %{token: String.t, user: %{}}) :: Plug.Conn.t
+  def create(conn, %{"token" => token, "user" => user_params, "account_id" => account_id}) do
+    case check_token(token) do
+      {:ok, email} ->
+        with {:ok} <- check_token_email(user_params["email"], email),
+          account <- Account.find(account_id),
+          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], account_id: account_id, verified: true)
+        do
+          Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
+
+          conn
+          |> put_status(:created)
+          |> render("status.json", status: "ok")
+        else
+          err -> conn
+          |> put_status(:bad_request)
+          |> render("error.json", error: err)
+        end
+      _ ->
+        show(conn, %{"id" => token})
+    end
+  end
+
+  @doc """
   Register user with provided token
   """
   @spec create(Plug.Conn.t, %{token: String.t, user: %{}}) :: Plug.Conn.t

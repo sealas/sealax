@@ -3,11 +3,13 @@ defmodule Sealax.RegistrationControllerTest do
 
   alias Sealax.Repo
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.Account
 
   @create_attrs %{email: "some@email.com", password: "some password", verified: true, appkey: "encrypted_appkey"}
   @create_unverified_attrs %{email: "some@email.com", password: "some password", verified: false, appkey: "encrypted_appkey"}
 
   @registration_attrs %{email: "some@email.com", password: "hashed password yall", password_hint: "so secret, mhhhh", appkey: "very encrypted key to your application"}
+  @registration_attrs_2 %{email: "some.other@email.com", password: "hashed password yall", password_hint: "so secret, mhhhh", appkey: "very encrypted key to your application"}
 
   describe "verification" do
     test "get verification code as a new user", %{conn: conn} do
@@ -67,6 +69,14 @@ defmodule Sealax.RegistrationControllerTest do
       assert_receive %{email: _, verification_code: token}
 
       conn = post conn, Routes.registration_path(conn, :create), %{token: token, user: @registration_attrs}
+
+      assert %{"status" => "ok"} = json_response(conn, 201)
+
+      account = Account.first(name: nil)
+      conn = post conn, Routes.registration_path(conn, :create), email: @registration_attrs_2.email
+      assert_receive %{email: _, verification_code: token}
+
+      conn = post conn, Routes.registration_path(conn, :create), %{token: token, user: @registration_attrs_2, account_id: account.id}
 
       assert %{"status" => "ok"} = json_response(conn, 201)
     end
