@@ -46,11 +46,11 @@ defmodule SealaxWeb.ConnCase do
     conn = Phoenix.ConnTest.build_conn()
 
     if tags[:authorized] do
-      {:ok, user} = %User{}
-      |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true})
-      |> Repo.insert()
+      {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
 
-      {:ok, %Account{} = account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
+      {:ok, user} = %User{}
+      |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true, account_id: account.id, appkey: "encrypted_appkey"})
+      |> Repo.insert()
 
       token_content = %{id: user.id, account_id: account.id}
       {:ok, token}  = AuthToken.generate_token(token_content)

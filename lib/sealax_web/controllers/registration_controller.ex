@@ -38,8 +38,8 @@ defmodule SealaxWeb.RegistrationController do
     case check_token(token) do
       {:ok, email} ->
         with {:ok} <- check_token_email(user_params["email"], email),
-          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], verified: true),
-          {:ok, %Account{} = account} <- Account.create(user: user, appkey: user_params["appkey"])
+          {:ok, %Account{} = account} <- Account.create(%{}),
+          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], account: account, verified: true)
         do
           Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
 

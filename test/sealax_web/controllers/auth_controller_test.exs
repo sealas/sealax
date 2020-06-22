@@ -7,7 +7,7 @@ defmodule Sealax.AuthControllerTest do
 
   @minimum_request_time 200_000
 
-  @create_attrs %{email: "some@email.com", password: "some password", active: true}
+  @create_attrs %{email: "some@email.com", password: "some password", active: true, appkey: "encrypted_appkey"}
   @valid_login  %{email: "some@email.com", password: "some password"}
   @failed_login %{email: "some@email.com", password: "wrong password"}
 
@@ -15,23 +15,23 @@ defmodule Sealax.AuthControllerTest do
   @test_yubikey "cccccccccccccccccccccccccccccccfilnhluinrjhl"
 
   def fixture() do
-    {:ok, user} = %User{}
-    |> User.create_test_changeset(@create_attrs)
-    |> Repo.insert()
+    {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
 
-    {:ok, %Account{} = _account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
+    {:ok, user} = %User{}
+    |> User.create_test_changeset(@create_attrs |> Map.put(:account_id, account.id))
+    |> Repo.insert()
 
     user
   end
 
   def fixture(:with_tfa) do
-    user_tfa_attrs = Map.put(@create_attrs, :tfa, [@create_tfa_attrs])
+    user_tfa_attrs = @create_attrs |> Map.put(:tfa, [@create_tfa_attrs])
+
+    {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
 
     {:ok, user} = %User{}
-    |> User.create_test_changeset(user_tfa_attrs)
+    |> User.create_test_changeset(user_tfa_attrs |> Map.put(:account_id, account.id))
     |> Repo.insert()
-
-    {:ok, %Account{} = _account} = Account.create(user_id: user.id, appkey: "incredibly_encrypted_encryption_key")
 
     user
   end
@@ -128,8 +128,8 @@ defmodule Sealax.AuthControllerTest do
       conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert json_response(conn, 401)
 
-      Account.delete_where(user: user)
       User.delete(user)
+      Account.delete(user.account_id)
 
       # Refresh token
       conn = get conn, Routes.auth_path(conn, :index), %{token: stale_token}

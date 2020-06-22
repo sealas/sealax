@@ -4,12 +4,15 @@ defmodule Sealax.Accounts.User do
 
   alias Sealax.Accounts.User
   alias Sealax.Accounts.UserTfa
+  alias Sealax.Accounts.Account
 
   @doc """
   We only identify users by email. Note that password and password_backup
   are cryptographic hashes, not the original entry!
   """
   schema "user" do
+    belongs_to :account, Account, type: AccountHashId
+
     embeds_many :tfa, UserTfa
 
     field :email,                :string
@@ -17,6 +20,7 @@ defmodule Sealax.Accounts.User do
     field :password_hint,        :string
     # field :password_backup,      EctoHashedPassword
     # field :password_hint_backup, :string
+    field :appkey,               :string
     field :recovery_code,        :string
     field :settings,             :map
     field :active,               :boolean
@@ -42,9 +46,9 @@ defmodule Sealax.Accounts.User do
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:email, :password, :password_hint, :settings])
+    |> cast(params, [:email, :password, :password_hint, :settings, :appkey, :account_id])
     |> cast_embed(:tfa)
-    |> validate_required([:email])
+    |> validate_required([:email, :appkey, :account_id])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:email)
   end
@@ -52,7 +56,7 @@ defmodule Sealax.Accounts.User do
   @spec update_changeset(map, map) :: %Ecto.Changeset{}
   def update_changeset(model, params) do
     model
-    |> cast(params, [:password, :password_hint, :settings, :verified, :active, :recovery_code])
+    |> cast(params, [:password, :password_hint, :settings, :verified, :active, :recovery_code, :appkey])
     |> cast_embed(:tfa)
   end
 
@@ -64,7 +68,7 @@ defmodule Sealax.Accounts.User do
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
   def create_test_changeset(%User{} = user, attrs) do
     user
-    |> cast(attrs, [:email, :password, :password_hint, :verified, :active, :settings])
+    |> cast(attrs, [:email, :password, :password_hint, :verified, :active, :settings, :appkey, :account_id])
     |> cast_embed(:tfa)
   end
 end

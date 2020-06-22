@@ -4,8 +4,8 @@ defmodule Sealax.RegistrationControllerTest do
   alias Sealax.Repo
   alias Sealax.Accounts.User
 
-  @create_attrs %{email: "some@email.com", password: "some password", verified: true}
-  @create_unverified_attrs %{email: "some@email.com", password: "some password", verified: false}
+  @create_attrs %{email: "some@email.com", password: "some password", verified: true, appkey: "encrypted_appkey"}
+  @create_unverified_attrs %{email: "some@email.com", password: "some password", verified: false, appkey: "encrypted_appkey"}
 
   @registration_attrs %{email: "some@email.com", password: "hashed password yall", password_hint: "so secret, mhhhh", appkey: "very encrypted key to your application"}
 

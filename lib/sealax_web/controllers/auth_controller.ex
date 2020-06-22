@@ -32,7 +32,7 @@ defmodule SealaxWeb.AuthController do
 
       # Valid Login (no TFA)
       user && user.active && EctoHashedPassword.checkpw(password, user.password) ->
-        account = Account.first(user_id: user.id)
+        account = Account.find(user.account_id)
 
         token_content = %{id: user.id, account_id: account.id}
         {:ok, token}  = AuthToken.generate_token(token_content)
@@ -65,7 +65,7 @@ defmodule SealaxWeb.AuthController do
 
     with user <- User.first(recovery_code: code),
          user when not is_nil(user) <- user,
-         account <- Account.first(user_id: user.id)
+         account <- Account.find(user.account_id)
     do
       usertfa = Enum.find(user.tfa, fn tfa -> tfa.auth_key == key end)
 
