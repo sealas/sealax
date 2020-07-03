@@ -39,7 +39,7 @@ defmodule SealaxWeb.RegistrationController do
       {:ok, email} ->
         with {:ok} <- check_token_email(user_params["email"], email),
           account <- Account.find(account_id),
-          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], account_id: account_id, verified: true)
+          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], appkey_salt: user_params["appkey_salt"], account_id: account_id, verified: true)
         do
           Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
 
@@ -65,7 +65,7 @@ defmodule SealaxWeb.RegistrationController do
       {:ok, email} ->
         with {:ok} <- check_token_email(user_params["email"], email),
           {:ok, %Account{} = account} <- Account.create(%{}),
-          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], account: account, verified: true)
+          {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], appkey_salt: user_params["appkey_salt"], account: account, verified: true)
         do
           Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
 
