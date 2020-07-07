@@ -33,7 +33,7 @@ defmodule SealaxWeb.Router do
   scope "/auth", SealaxWeb do
     pipe_through :auth_api
 
-    get "/", AuthController, :index
+    post "/", AuthController, :index
     resources "/registration", RegistrationController
   end
 
