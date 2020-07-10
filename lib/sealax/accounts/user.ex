@@ -47,7 +47,7 @@ defmodule Sealax.Accounts.User do
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:email, :password, :password_hint, :settings, :appkey, :appkey_salt, :account_id])
+    |> cast(params, [:email, :password, :password_hint, :settings, :appkey, :appkey_salt, :account_id, :verified])
     |> cast_embed(:tfa)
     |> validate_required([:email, :appkey, :appkey_salt, :account_id])
     |> validate_format(:email, ~r/@/)

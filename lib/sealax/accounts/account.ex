@@ -2,8 +2,6 @@ defmodule Sealax.Accounts.Account do
   use BaseModel, repo: Sealax.Repo
   import Ecto.Changeset
 
-  alias Sealax.Accounts.User
-
   @primary_key {:id, AccountHashId, read_after_writes: true}
   schema "account" do
     field :name,          :string
