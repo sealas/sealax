@@ -44,6 +44,8 @@ defmodule Sealax.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
 
+      {:cors_plug, "~> 2.0"},
+
       {:timex, "~> 3.6"},
       {:hashids, "~> 2.0"},
       {:swoosh, "~> 0.25"},

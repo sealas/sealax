@@ -45,6 +45,10 @@ defmodule SealaxWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 
+  plug CORSPlug,
+    origin: "*"
+    # headers: ["X-SITE" | CORSPlug.defaults[:headers]]
+
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
