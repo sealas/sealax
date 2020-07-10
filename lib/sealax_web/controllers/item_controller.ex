@@ -9,7 +9,7 @@ defmodule SealaxWeb.ItemController do
 
   require Logger
 
-  def index(conn, params) do
+  def index(conn, _params) do
     account_id = get_account(conn)
 
     item = Item.where(account_id: account_id)
