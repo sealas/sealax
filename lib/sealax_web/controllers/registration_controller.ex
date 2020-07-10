@@ -10,6 +10,10 @@ defmodule SealaxWeb.RegistrationController do
 
   action_fallback SealaxWeb.FallbackController
 
+  @env Mix.env()
+
+  defp env, do: @env
+
   @doc """
   Check if token is (still) valid
   """
@@ -97,7 +101,7 @@ defmodule SealaxWeb.RegistrationController do
 
         conn
         |> put_status(:created)
-        |> render("status.json", status: "verify_token")
+        |> token_response(token)
       user && !user.verified ->
         token = verification_token(email)
 
@@ -110,6 +114,15 @@ defmodule SealaxWeb.RegistrationController do
         conn
         |> put_status(:bad_request) # http 400
         |> render("error.json", error: "already_registered")
+    end
+  end
+
+  defp token_response(conn, token) do
+    cond do
+      env() === :prod ->
+        render(conn, "status.json", status: "verify_token")
+      true ->
+        render(conn, "token.json", status: "verify_token", token: token)
     end
   end
 
