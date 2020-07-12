@@ -30,8 +30,8 @@ defmodule SealaxWeb.ItemChannel do
     case Item.create(params) do
       {:ok, %Item{} = item} ->
 
-        push socket, "add_item_ok", %{item: item}
-        broadcast socket, "add_item", %{item: item}
+        push socket, "add_item_ok", SealaxWeb.ItemView.render("item.json", item: item)
+        broadcast socket, "add_item", SealaxWeb.ItemView.render("item.json", item: item)
       {:error, error} ->
         push socket, "add_item_error", %{error: error}
     end
@@ -42,8 +42,8 @@ defmodule SealaxWeb.ItemChannel do
   def handle_in("update_item", %{"id" => id, "item" => params}, %{assigns: %{user: user}} = socket) do
     case Item.SyncManager.sync(user["account_id"], id, params) do
       {:ok, item} ->
-        push socket, "update_item_ok", %{item: item}
-        broadcast socket, "update_item", %{item: item}
+        push socket, "update_item_ok", SealaxWeb.ItemView.render("item.json", item: item)
+        broadcast socket, "update_item", SealaxWeb.ItemView.render("item.json", item: item)
       {:conflict, conflict} ->
         push socket, "update_item_error", %{conflict: conflict}
     end
