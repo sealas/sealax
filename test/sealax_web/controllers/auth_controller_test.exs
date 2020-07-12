@@ -57,7 +57,7 @@ defmodule Sealax.AuthControllerTest do
     test "successful authentication as a user", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
       assert %{
-        "auth" => auth_token,
+        "token" => auth_token,
         "account_id" => account_id,
         "appkey" => appkey,
         "appkey_salt" => appkey_salt
@@ -85,7 +85,7 @@ defmodule Sealax.AuthControllerTest do
     test "deny request with timedout token", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
       assert %{
-        "auth" => auth_token,
+        "token" => auth_token,
         "account_id" => account_id,
         "appkey" => appkey,
         "appkey_salt" => appkey_salt
@@ -117,7 +117,7 @@ defmodule Sealax.AuthControllerTest do
       # Refresh token
       conn = post conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert %{
-        "auth" => auth_token,
+        "token" => auth_token,
         "account_id" => account_id,
         "appkey" => appkey,
         "appkey_salt" => appkey_salt
@@ -169,7 +169,7 @@ defmodule Sealax.AuthControllerTest do
 
       conn = post conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: @test_yubikey}
       assert %{
-        "auth" => _auth_token,
+        "token" => _auth_token,
         "account_id" => _account_id,
         "appkey" => _appkey,
         "appkey_salt" => _appkey_salt

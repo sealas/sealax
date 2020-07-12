@@ -39,7 +39,7 @@ defmodule SealaxWeb.AuthController do
 
         conn
         |> put_status(:created) # http 201
-        |> render("auth.json", %{auth: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+        |> render("auth.json", %{token: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
 
       # User exists, needs activation
       user && !user.active ->
@@ -79,7 +79,7 @@ defmodule SealaxWeb.AuthController do
 
           conn
           |> put_status(:created) # http 201
-          |> render("auth.json", %{auth: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+          |> render("auth.json", %{token: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
         true ->
           conn
           |> put_status(:unauthorized) # http 401
@@ -107,7 +107,7 @@ defmodule SealaxWeb.AuthController do
         user && user.active && token ->
           conn
           |> put_status(:created)
-          |> render("auth.json", %{auth: token, account_id: user.account_id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+          |> render("auth.json", %{token: token, account_id: user.account_id, appkey: user.appkey, appkey_salt: user.appkey_salt})
         true ->
           conn
           |> put_status(:unauthorized)
