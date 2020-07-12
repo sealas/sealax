@@ -18,7 +18,7 @@ defmodule SealaxWeb.ItemChannel do
   def handle_info(:after_join, %{assigns: %{user: user}} = socket) do
     items = Item.where(account_id: user["account_id"])
 
-    push(socket, "all_items", %{items: items})
+    push socket, "all_items", %{items: items}
 
     {:noreply, socket}
   end
@@ -29,9 +29,11 @@ defmodule SealaxWeb.ItemChannel do
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
+
+        push socket, "add_item_ok", %{item: item}
         broadcast socket, "add_item", %{item: item}
       {:error, error} ->
-        push(socket, "add_item_error", %{error: error})
+        push socket, "add_item_error", %{error: error}
     end
 
     {:noreply, socket}
@@ -40,9 +42,10 @@ defmodule SealaxWeb.ItemChannel do
   def handle_in("update_item", %{"id" => id, "item" => params}, %{assigns: %{user: user}} = socket) do
     case Item.SyncManager.sync(user["account_id"], id, params) do
       {:ok, item} ->
+        push socket, "update_item_ok", %{item: item}
         broadcast socket, "update_item", %{item: item}
       {:conflict, conflict} ->
-        push(socket, "update_item_error", %{conflict: conflict})
+        push socket, "update_item_error", %{conflict: conflict}
     end
 
     {:noreply, socket}
@@ -51,8 +54,9 @@ defmodule SealaxWeb.ItemChannel do
   def handle_in("delete_item", %{"id" => id}, %{assigns: %{user: user}} = socket) do
     case Item.delete_where(id: id, account_id: user["account_id"]) do
       {:ok, 0} ->
-        push(socket, "delete_item_error", %{id: id})
+        push socket, "delete_item_error", %{id: id}
       {:ok, _} ->
+        push socket, "delete_item_ok", %{id: id}
         broadcast socket, "delete_item", %{id: id}
     end
 

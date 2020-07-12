@@ -54,6 +54,7 @@ defmodule SealaxWeb.ItemChannelTest do
     test "delete item", %{socket: socket, item: item} do
       push socket, "delete_item", %{id: item.id}
 
+      assert_push "delete_item_ok", %{id: id}
       assert_broadcast "delete_item", %{id: id}
       assert id == item.id
 
@@ -65,6 +66,7 @@ defmodule SealaxWeb.ItemChannelTest do
     test "add item", %{socket: socket} do
       push socket, "add_item", %{item: @create_attrs}
 
+      assert_push "add_item_ok", %{item: item}
       assert_broadcast "add_item", %{item: item}
     end
 
@@ -78,6 +80,7 @@ defmodule SealaxWeb.ItemChannelTest do
         "id" => item.id
       }}
 
+      assert_push "update_item_ok", %{item: updated_item}
       assert_broadcast "update_item", %{item: updated_item}
       assert updated_item.id == item.id
       assert updated_item.updated_at != item.updated_at
