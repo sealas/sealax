@@ -18,7 +18,7 @@ defmodule SealaxWeb.ItemChannel do
   def handle_info(:after_join, %{assigns: %{user: user}} = socket) do
     items = Item.where(account_id: user["account_id"])
 
-    push socket, "all_items", %{items: items}
+    push socket, "all_items", SealaxWeb.ItemView.render("index.json", item: items)
 
     {:noreply, socket}
   end
