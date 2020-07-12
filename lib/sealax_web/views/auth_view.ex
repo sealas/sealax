@@ -13,7 +13,12 @@ defmodule SealaxWeb.AuthView do
     %{tfa: true, code: tfa}
   end
 
-  def render("auth.json", %{auth: auth}) do
-    %{auth: auth}
+  def render("auth.json", %{auth: auth, account_id: account_id, appkey: appkey, appkey_salt: appkey_salt}) do
+    %{
+      auth: auth,
+      account_id: account_id,
+      appkey: appkey,
+      appkey_salt: appkey_salt
+    }
   end
 end

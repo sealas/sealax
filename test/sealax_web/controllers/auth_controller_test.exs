@@ -56,7 +56,12 @@ defmodule Sealax.AuthControllerTest do
 
     test "successful authentication as a user", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
-      assert %{"auth" => auth_token} = json_response(conn, 201)
+      assert %{
+        "auth" => auth_token,
+        "account_id" => account_id,
+        "appkey" => appkey,
+        "appkey_salt" => appkey_salt
+      } = json_response(conn, 201)
 
       conn = conn
       |> recycle()
@@ -79,7 +84,12 @@ defmodule Sealax.AuthControllerTest do
 
     test "deny request with timedout token", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
-      assert %{"auth" => auth_token} = json_response(conn, 201)
+      assert %{
+        "auth" => auth_token,
+        "account_id" => account_id,
+        "appkey" => appkey,
+        "appkey_salt" => appkey_salt
+      } = json_response(conn, 201)
 
       {:ok, token} = AuthToken.decrypt_token(auth_token)
       {:ok, auth_token} = AuthToken.generate_token %{token | "ct" => DateTime.utc_now() |> DateTime.to_unix() |> Kernel.-(864000)}
@@ -106,7 +116,12 @@ defmodule Sealax.AuthControllerTest do
 
       # Refresh token
       conn = post conn, Routes.auth_path(conn, :index), %{token: stale_token}
-      assert %{"auth" => auth_token} = json_response(conn, 201)
+      assert %{
+        "auth" => auth_token,
+        "account_id" => account_id,
+        "appkey" => appkey,
+        "appkey_salt" => appkey_salt
+      } = json_response(conn, 201)
 
       # And retry request
       conn = conn
@@ -153,7 +168,12 @@ defmodule Sealax.AuthControllerTest do
       assert %{"tfa" => true, "code" => tfa_code} = json_response(conn, 201)
 
       conn = post conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: @test_yubikey}
-      assert %{"auth" => _auth_token} = json_response(conn, 201)
+      assert %{
+        "auth" => _auth_token,
+        "account_id" => _account_id,
+        "appkey" => _appkey,
+        "appkey_salt" => _appkey_salt
+      } = json_response(conn, 201)
     end
 
     test "fail to authenticate with wrong password", %{conn: conn} do
