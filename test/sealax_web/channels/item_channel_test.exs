@@ -52,49 +52,49 @@ defmodule SealaxWeb.ItemChannelTest do
     end
 
     test "delete item", %{socket: socket, item: item} do
-      push socket, "delete_item", %{id: item.id}
+      ref = push socket, "delete_item", %{id: item.id}
 
-      assert_push "delete_item_ok", %{id: id}
+      assert_reply ref, :delete_item_ok, %{id: id}
       assert_broadcast "delete_item", %{id: id}
       assert id == item.id
 
-      push socket, "delete_item", %{id: item.id}
+      ref = push socket, "delete_item", %{id: item.id}
 
-      assert_push "delete_item_error", %{id: id}
+      assert_reply ref, :error, %{id: id}
     end
 
     test "add item", %{socket: socket} do
-      push socket, "add_item", %{item: @create_attrs}
+      ref = push socket, "add_item", %{item: @create_attrs}
 
-      assert_push "add_item_ok", %{item: item}
+      assert_reply ref, :add_item_ok, %{item: item}
       assert_broadcast "add_item", %{item: item}
     end
 
     test "update item", %{socket: socket, item: item} do
       Process.sleep(1000)
 
-      push socket, "update_item", %{id: item.id, item: %{
+      ref = push socket, "update_item", %{id: item.id, item: %{
         "content_type" => "new_type",
         "content" => "new_stuff",
         "updated_at" => item.updated_at,
         "id" => item.id
       }}
 
-      assert_push "update_item_ok", %{item: updated_item}
+      assert_reply ref, :update_item_ok, %{item: updated_item}
       assert_broadcast "update_item", %{item: updated_item}
       assert updated_item.id == item.id
       assert updated_item.updated_at != item.updated_at
     end
 
     test "update outdated item causes conflict", %{socket: socket, item: item} do
-      push socket, "update_item", %{id: item.id, item: %{
+      ref = push socket, "update_item", %{id: item.id, item: %{
         "content_type" => "new_type",
         "content" => "new_stuff",
         "updated_at" => Timex.shift(item.updated_at, minutes: -300),
         "id" => item.id
       }}
 
-      assert_push "update_item_error", %{conflict: %{type: type, server_item: updated_item}}
+      assert_reply ref, :error, %{conflict: %{type: type, server_item: updated_item}}
 
       assert type == "sync_conflict"
     end

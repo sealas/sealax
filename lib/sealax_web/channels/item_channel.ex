@@ -3,6 +3,8 @@ defmodule SealaxWeb.ItemChannel do
 
   alias Sealax.Accounts.Item
 
+  require Logger
+
   def join("item:lobby", _, _), do: {:error, %{reason: "no_lobby"}}
 
   def join("item:" <> account_id, _payload, %{assigns: %{user: user}} = socket) do
@@ -30,36 +32,33 @@ defmodule SealaxWeb.ItemChannel do
     case Item.create(params) do
       {:ok, %Item{} = item} ->
 
-        push socket, "add_item_ok", SealaxWeb.ItemView.render("show.json", item: item)
-        broadcast socket, "add_item", SealaxWeb.ItemView.render("show.json", item: item)
-      {:error, error} ->
-        push socket, "add_item_error", %{error: error}
-    end
+        broadcast_from socket, "add_item", SealaxWeb.ItemView.render("show.json", item: item)
 
-    {:noreply, socket}
+        {:reply, {:add_item_ok, SealaxWeb.ItemView.render("show.json", item: item)}, socket}
+      {:error, error} ->
+        {:reply, {:error, error}, socket}
+    end
   end
 
   def handle_in("update_item", %{"id" => id, "item" => params}, %{assigns: %{user: user}} = socket) do
     case Item.SyncManager.sync(user["account_id"], id, params) do
       {:ok, item} ->
-        push socket, "update_item_ok", SealaxWeb.ItemView.render("show.json", item: item)
-        broadcast socket, "update_item", SealaxWeb.ItemView.render("show.json", item: item)
-      {:conflict, conflict} ->
-        push socket, "update_item_error", %{conflict: conflict}
-    end
+        broadcast_from socket, "update_item", SealaxWeb.ItemView.render("show.json", item: item)
 
-    {:noreply, socket}
+        {:reply, {:update_item_ok, SealaxWeb.ItemView.render("show.json", item: item)}, socket}
+      {:conflict, conflict} ->
+        {:reply, {:error, %{conflict: conflict}}, socket}
+    end
   end
 
   def handle_in("delete_item", %{"id" => id}, %{assigns: %{user: user}} = socket) do
     case Item.delete_where(id: id, account_id: user["account_id"]) do
       {:ok, 0} ->
-        push socket, "delete_item_error", %{id: id}
+        {:reply, {:error, %{id: id}}, socket}
       {:ok, _} ->
-        push socket, "delete_item_ok", %{id: id}
-        broadcast socket, "delete_item", %{id: id}
-    end
+        broadcast_from socket, "delete_item", %{id: id}
 
-    {:noreply, socket}
+        {:reply, {:delete_item_ok, %{id: id}}, socket}
+    end
   end
 end
