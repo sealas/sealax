@@ -21,6 +21,7 @@ defmodule SealaxWeb.Router do
   """
   pipeline :auth do
     plug :verify_token
+    plug :get_account
   end
 
   scope "/items", SealaxWeb do
@@ -67,5 +68,20 @@ defmodule SealaxWeb.Router do
       if diff < minimum_request_time, do: :timer.sleep round((minimum_request_time - diff)/1000)
       conn
     end)
+  end
+
+  def get_account(conn, _) do
+    {:ok, token} = AuthToken.decrypt_token(conn)
+
+    cond do
+      !is_nil(token["account_id"]) && is_nil(token["tfa_token"]) ->
+        conn
+        |> assign(:account_id, token["account_id"])
+      true ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(:unauthorized, "{\"error\": \"invalid_token\"}")
+        |> halt
+    end
   end
 end

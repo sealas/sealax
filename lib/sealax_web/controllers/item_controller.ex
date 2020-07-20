@@ -10,9 +10,7 @@ defmodule SealaxWeb.ItemController do
   require Logger
 
   def index(conn, _params) do
-    account_id = get_account(conn)
-
-    item = Item.where(account_id: account_id)
+    item = Item.where(account_id: conn.assigns.account_id)
 
     conn
     |> put_status(:ok)
@@ -20,11 +18,9 @@ defmodule SealaxWeb.ItemController do
   end
 
   def update(conn, %{"id" => id, "item" => params}) do
-    account_id = get_account(conn)
-
-    case Item.SyncManager.sync(account_id, id, params) do
+    case Item.SyncManager.sync(conn.assigns.account_id, id, params) do
       {:ok, item} ->
-        Endpoint.broadcast("item:" <> account_id, "update_item", %{item: item})
+        Endpoint.broadcast("item:" <> conn.assigns.account_id, "update_item", %{item: item})
 
         conn
         |> put_status(:created)
@@ -37,14 +33,12 @@ defmodule SealaxWeb.ItemController do
   end
 
   def create(conn, %{"item" => params}) do
-    account_id = get_account(conn)
-
     params = params
-    |> Map.put("account_id", account_id)
+    |> Map.put("account_id", conn.assigns.account_id)
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
-        Endpoint.broadcast("item:" <> account_id, "new_item", %{item: item})
+        Endpoint.broadcast("item:" <> conn.assigns.account_id, "new_item", %{item: item})
 
         conn
         |> put_status(:created)
@@ -57,25 +51,17 @@ defmodule SealaxWeb.ItemController do
   end
 
   def delete(conn, %{"id" => id}) do
-    account_id = get_account(conn)
-
-    case Item.delete_where(id: id, account_id: account_id) do
+    case Item.delete_where(id: id, account_id: conn.assigns.account_id) do
       {:ok, 0} ->
         conn
         |> put_status(:bad_request)
         |> render("error.json", error: "cant_delete")
       {:ok, _} ->
-        Endpoint.broadcast("item:" <> account_id, "delete_item", %{id: id})
+        Endpoint.broadcast("item:" <> conn.assigns.account_id, "delete_item", %{id: id})
 
         conn
         |> put_status(:created)
         |> render("status.json", status: "ok")
     end
-  end
-
-  defp get_account(conn) do
-    {:ok, token} = AuthToken.decrypt_token(conn)
-
-    token["account_id"]
   end
 end
