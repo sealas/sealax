@@ -18,7 +18,6 @@ defmodule SealaxWeb.ItemView do
   def render("item.json", %{item: item}) do
     %{id: item.id,
       content: item.content,
-      content_type: item.content_type,
       updated_at: item.updated_at}
   end
 
