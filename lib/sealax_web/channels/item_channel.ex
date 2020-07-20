@@ -8,11 +8,30 @@ defmodule SealaxWeb.ItemChannel do
   def join("item:lobby", _, _), do: {:error, %{reason: "no_lobby"}}
 
   def join("item:" <> account_id, _payload, %{assigns: %{user: user}} = socket) do
-    if account_id == user["account_id"] do
-      send(self(), :after_join)
-      {:ok, socket}
-    else
-      {:error, %{reason: "unauthorized"}}
+    cond do
+      account_id == user["account_id"] ->
+        case check_token(user) do
+          {:ok} ->
+            send(self(), :after_join)
+            {:ok, socket}
+          {:error, reason} ->
+            {:error, %{reason: reason}}
+        end
+      true ->
+        {:error, %{reason: "unauthorized"}}
+    end
+  end
+
+  defp check_token(token) do
+    cond do
+      !is_nil(token["tfa_key"]) || is_nil(token["account_id"]) ->
+        {:error, :invalid_token}
+      AuthToken.is_timedout?(token) ->
+        {:error, :timeout}
+      AuthToken.needs_refresh?(token) ->
+        {:error, :needs_refresh}
+      true ->
+        {:ok}
     end
   end
 
@@ -31,10 +50,9 @@ defmodule SealaxWeb.ItemChannel do
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
-
         broadcast_from socket, "add_item", SealaxWeb.ItemView.render("show.json", item: item)
 
-        {:reply, {:add_item_ok, SealaxWeb.ItemView.render("show.json", item: item)}, socket}
+        {:reply, {:add_item_ok, %{id: item.id, updated_at: item.updated_at}}, socket}
       {:error, error} ->
         {:reply, {:error, error}, socket}
     end
@@ -45,7 +63,7 @@ defmodule SealaxWeb.ItemChannel do
       {:ok, item} ->
         broadcast_from socket, "update_item", SealaxWeb.ItemView.render("show.json", item: item)
 
-        {:reply, {:update_item_ok, SealaxWeb.ItemView.render("show.json", item: item)}, socket}
+        {:reply, {:update_item_ok, %{id: item.id, updated_at: item.updated_at}}, socket}
       {:conflict, conflict} ->
         {:reply, {:error, %{conflict: conflict}}, socket}
     end

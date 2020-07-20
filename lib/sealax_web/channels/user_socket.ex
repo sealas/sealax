@@ -19,13 +19,23 @@ defmodule SealaxWeb.UserSocket do
   def connect(%{"token" => token}, socket, _connect_info) do
     case AuthToken.decrypt_token(token) do
       {:ok, user} ->
-        {:ok, assign(socket, :user, user)}
+        cond do
+          token_valid?(user) ->
+            {:ok, assign(socket, :user, user) |> assign(:token, token)}
+          true ->
+            :error
+        end 
       _ ->
         :error
     end
   end
   @impl true
   def connect(_params, _socket, _connect_info), do: :error
+
+  # Make sure token is actually an auth token.
+  defp token_valid?(token) do
+    is_nil(token["tfa_key"]) && !is_nil(token["account_id"])
+  end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
   #

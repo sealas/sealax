@@ -117,10 +117,7 @@ defmodule Sealax.AuthControllerTest do
       # Refresh token
       conn = post conn, Routes.auth_path(conn, :index), %{token: stale_token}
       assert %{
-        "token" => auth_token,
-        "account_id" => account_id,
-        "appkey" => appkey,
-        "appkey_salt" => appkey_salt
+        "token" => auth_token
       } = json_response(conn, 201)
 
       # And retry request
@@ -165,15 +162,29 @@ defmodule Sealax.AuthControllerTest do
 
     test "successful authentication with TFA", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
-      assert %{"tfa" => true, "code" => tfa_code} = json_response(conn, 201)
+      assert %{"tfa" => true, "token" => tfa_token} = json_response(conn, 201)
 
-      conn = post conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: @test_yubikey}
+      conn = post conn, Routes.auth_path(conn, :index), %{token: tfa_token, auth_key: @test_yubikey}
       assert %{
         "token" => _auth_token,
         "account_id" => _account_id,
         "appkey" => _appkey,
         "appkey_salt" => _appkey_salt
       } = json_response(conn, 201)
+    end
+
+    test "prevent misuse of TFA token", %{conn: conn} do
+      conn = post conn, Routes.auth_path(conn, :index), @valid_login
+      assert %{"tfa" => true, "token" => tfa_token} = json_response(conn, 201)
+
+      assert :error == Phoenix.ChannelTest.connect(SealaxWeb.UserSocket, %{"token" => tfa_token})
+
+      conn = conn
+      |> recycle()
+      |> Plug.Conn.put_req_header("authorization", "bearer: " <> tfa_token)
+
+      conn = post conn, Routes.item_path(conn, :create), item: %{}
+      assert %{"error" => error} = json_response(conn, 401)
     end
 
     test "fail to authenticate with wrong password", %{conn: conn} do
@@ -183,12 +194,12 @@ defmodule Sealax.AuthControllerTest do
 
     test "failed authentication with TFA", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
-      assert %{"tfa" => true, "code" => tfa_code} = json_response(conn, 201)
+      assert %{"tfa" => true, "token" => tfa_token} = json_response(conn, 201)
 
-      conn = post conn, Routes.auth_path(conn, :index), %{code: "wrong code!", auth_key: "wrong key!"}
+      conn = post conn, Routes.auth_path(conn, :index), %{token: "wrong code!", auth_key: "wrong key!"}
       assert json_response(conn, 401) == %{"error" => "auth fail"}
 
-      conn = post conn, Routes.auth_path(conn, :index), %{code: tfa_code, auth_key: "wrong key!"}
+      conn = post conn, Routes.auth_path(conn, :index), %{token: tfa_token, auth_key: "wrong key!"}
       assert json_response(conn, 401) == %{"error" => "auth fail"}
     end
   end
@@ -215,7 +226,7 @@ defmodule Sealax.AuthControllerTest do
   end
 
   defp create_stale_token(user) do
-    content = %{"id" => user.id, "rt" => DateTime.utc_now() |> DateTime.to_unix() |> Kernel.-(3600)}
+    content = %{"id" => user.id, "account_id" => user.account_id, "rt" => DateTime.utc_now() |> DateTime.to_unix() |> Kernel.-(3600)}
     {:ok, auth_token} = AuthToken.generate_token(content)
 
     auth_token

@@ -23,19 +23,21 @@ defmodule SealaxWeb.AuthController do
     cond do
       # Valid Login with TFA
       user && user.active && EctoHashedPassword.checkpw(password, user.password) && user.tfa != [] ->
-        code = User.create_random_password()
-        User.update(user, recovery_code: code)
+        {:ok, token} = AuthToken.generate_token(%{
+          id: user.id,
+          tfa_token: true
+        })
 
         conn
         |> put_status(:created) # http 201
-        |> render("tfa.json", %{tfa: code})
+        |> render("tfa.json", %{token: token})
 
       # Valid Login (no TFA)
       user && user.active && EctoHashedPassword.checkpw(password, user.password) ->
         account = Account.find(user.account_id)
 
         token_content = %{id: user.id, account_id: account.id}
-        {:ok, token}  = AuthToken.generate_token(token_content)
+        {:ok, token} = AuthToken.generate_token(token_content)
 
         conn
         |> put_status(:created) # http 201
@@ -57,15 +59,16 @@ defmodule SealaxWeb.AuthController do
 
   @doc """
   Entry for auth with TFA key.
-  Requires code to identify user
+  Requires token to identify user
   """
-  @spec index(Plug.Conn.t, %{code: String.t, auth_key: String.t}) :: Plug.Conn.t
-  def index(conn, %{"code" => code, "auth_key" => auth_key}) do
+  @spec index(Plug.Conn.t, %{token: String.t, auth_key: String.t}) :: Plug.Conn.t
+  def index(conn, %{"token" => token, "auth_key" => auth_key}) do
     key = UserTfa.extract_yubikey(auth_key)
 
-    with user <- User.first(recovery_code: code),
+    with {:ok, token} <- AuthToken.decrypt_token(token),
+         user         <- User.first(id: token["id"]),
          user when not is_nil(user) <- user,
-         account <- Account.find(user.account_id)
+         account      <- Account.find(user.account_id)
     do
       usertfa = Enum.find(user.tfa, fn tfa -> tfa.auth_key == key end)
 
