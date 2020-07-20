@@ -38,5 +38,5 @@ defmodule SealaxWeb.UserSocket do
   #
   # Returning `nil` makes this socket anonymous.
   @impl true
-  def id(_socket), do: nil
+  def id(socket), do: "user_socket:#{socket.assigns.user["id"]}"
 end
