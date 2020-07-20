@@ -9,8 +9,12 @@ defmodule SealaxWeb.AuthView do
     %{error: "inactive"}
   end
 
-  def render("tfa.json", %{tfa: tfa}) do
-    %{tfa: true, code: tfa}
+  def render("tfa.json", %{token: token}) do
+    %{tfa: true, token: token}
+  end
+
+  def render("token.json", %{token: token}) do
+    %{token: token}
   end
 
   def render("auth.json", %{token: token, account_id: account_id, appkey: appkey, appkey_salt: appkey_salt}) do

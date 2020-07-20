@@ -110,7 +110,7 @@ defmodule SealaxWeb.AuthController do
         user && user.active && token ->
           conn
           |> put_status(:created)
-          |> render("auth.json", %{token: token, account_id: user.account_id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+          |> render("token.json", %{token: token})
         true ->
           conn
           |> put_status(:unauthorized)
