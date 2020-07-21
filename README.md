@@ -2,6 +2,10 @@
 
 ![Elixir CI](https://github.com/sealas/sealax/workflows/Elixir%20CI/badge.svg)
 
+## Frontend
+
+For reference frontend library check out [sealjs](https://github.com/sealas/sealjs).
+
 ## Development
 
 To start dev server:
