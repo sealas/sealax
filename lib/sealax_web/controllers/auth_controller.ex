@@ -70,6 +70,7 @@ defmodule SealaxWeb.AuthController do
          user when not is_nil(user) <- user,
          account      <- Account.find(user.account_id)
     do
+      # Check if TFA key exists
       usertfa = Enum.find(user.tfa, fn tfa -> tfa.auth_key == key end)
 
       cond do

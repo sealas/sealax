@@ -13,6 +13,7 @@ defmodule Sealax.AuthControllerTest do
 
   @create_tfa_attrs %{type: "yubikey", auth_key: "cccccccccccc"}
   @test_yubikey "cccccccccccccccccccccccccccccccfilnhluinrjhl"
+  @wrong_test_yubikey "dccccccccccccccccccccccccccccccfilnhluinrjhl"
 
   def fixture() do
     {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
@@ -171,6 +172,14 @@ defmodule Sealax.AuthControllerTest do
         "appkey" => _appkey,
         "appkey_salt" => _appkey_salt
       } = json_response(conn, 201)
+    end
+
+    test "prevent login with wrong TFA", %{conn: conn} do
+      conn = post conn, Routes.auth_path(conn, :index), @valid_login
+      assert %{"tfa" => true, "token" => tfa_token} = json_response(conn, 201)
+
+      conn = post conn, Routes.auth_path(conn, :index), %{token: tfa_token, auth_key: @wrong_test_yubikey}
+      assert %{"error" => error} = json_response(conn, 401)
     end
 
     test "prevent misuse of TFA token", %{conn: conn} do
