@@ -15,7 +15,7 @@ config :sealax, SealaxWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "MEP0tuS7r27KVdUd8AjOmlcoWemGsl9CWy/8ei2tZMQBKRIiEA9I/5cEYz/ysw+p",
   render_errors: [view: SealaxWeb.ErrorView, accepts: ~w(json), layout: false],
-  pubsub_server: Sealax.PubSub,
+  pubsub_server: :sealax_pubsub,
   live_view: [signing_salt: "NuddYDVS"]
 
 # Configures Elixir's Logger
