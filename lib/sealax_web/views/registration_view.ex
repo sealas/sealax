@@ -5,8 +5,8 @@ defmodule SealaxWeb.RegistrationView do
     %{error: error}
   end
 
-  def render("token.json", %{status: status, token: token}) do
-    %{status: status, token: token}
+  def render("token.json", %{status: status, token_hash: token_hash, token: token}) do
+    %{status: status, token_hash: token_hash, token: token}
   end
 
   def render("status.json", %{status: status}) do

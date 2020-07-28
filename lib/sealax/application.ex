@@ -12,7 +12,7 @@ defmodule Sealax.Application do
       # Start the Telemetry supervisor
       SealaxWeb.Telemetry,
       # Start the PubSub system
-      {Phoenix.PubSub, name: Sealax.PubSub},
+      {Phoenix.PubSub, name: :sealax_pubsub},
       # Start the Endpoint (http/https)
       SealaxWeb.Endpoint
       # Start a worker by calling: Sealax.Worker.start_link(arg)

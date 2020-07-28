@@ -45,7 +45,7 @@ defmodule SealaxWeb.RegistrationController do
           account <- Account.find(account_id),
           {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], appkey_salt: user_params["appkey_salt"], account_id: account_id, verified: true)
         do
-          Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
+          Phoenix.PubSub.broadcast(:sealax_pubsub, "user:registered", %{user: user, account: account})
 
           conn
           |> put_status(:created)
@@ -71,7 +71,7 @@ defmodule SealaxWeb.RegistrationController do
           {:ok, %Account{} = account} <- Account.create(%{}),
           {:ok, %User{} = user} <- User.create(email: user_params["email"], password: user_params["password"], password_hint: user_params["password_hint"], salt: user_params["salt"], appkey: user_params["appkey"], appkey_salt: user_params["appkey_salt"], account: account, verified: true)
         do
-          Phoenix.PubSub.broadcast(Sealax.PubSub, "user:registered", %{user: user, account: account})
+          Phoenix.PubSub.broadcast(:sealax_pubsub, "user:registered", %{user: user, account: account})
 
           conn
           |> put_status(:created)
@@ -97,7 +97,7 @@ defmodule SealaxWeb.RegistrationController do
       !user ->
         token = verification_token(email)
 
-        Phoenix.PubSub.broadcast(Sealax.PubSub, "user:send_verification", %{email: email, verification_code: token})
+        Phoenix.PubSub.broadcast(:sealax_pubsub, "user:send_verification", %{email: email, verification_code: token})
 
         conn
         |> put_status(:created)
@@ -105,7 +105,7 @@ defmodule SealaxWeb.RegistrationController do
       user && !user.verified ->
         token = verification_token(email)
 
-        Phoenix.PubSub.broadcast(Sealax.PubSub, "user:send_verification", %{email: email, verification_code: token})
+        Phoenix.PubSub.broadcast(:sealax_pubsub, "user:send_verification", %{email: email, verification_code: token})
 
         conn
         |> put_status(:bad_request)
@@ -118,12 +118,16 @@ defmodule SealaxWeb.RegistrationController do
   end
 
   defp token_response(conn, token) do
+    token_hash = :crypto.hash(:sha256, token)
+    |> Base.url_encode64
+
+    token =
     cond do
-      env() === :prod ->
-        render(conn, "status.json", status: "verify_token")
-      true ->
-        render(conn, "token.json", status: "verify_token", token: token)
+      env() === :prod -> ""
+      true -> token
     end
+
+    render(conn, "token.json", status: "verify_token", token_hash: token_hash, token: token)
   end
 
   defp verification_token(email) do
