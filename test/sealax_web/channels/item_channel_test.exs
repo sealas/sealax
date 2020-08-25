@@ -21,9 +21,6 @@ defmodule SealaxWeb.ItemChannelTest do
     test "refuse connection for unauthorized channel", %{token: token} do
       assert {:ok, socket} = connect(UserSocket, %{"token" => token})
 
-      assert {:error, %{reason: "no_lobby"}} = socket
-      |> subscribe_and_join(ItemChannel, "item:lobby")
-
       assert {:error, %{reason: "unauthorized"}} = socket
       |> subscribe_and_join(ItemChannel, "item:1")
     end

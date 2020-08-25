@@ -5,8 +5,6 @@ defmodule SealaxWeb.ItemChannel do
 
   require Logger
 
-  def join("item:lobby", _, _), do: {:error, %{reason: "no_lobby"}}
-
   def join("item:" <> account_id, _payload, %{assigns: %{user: user}} = socket) do
     cond do
       account_id == user["account_id"] ->
