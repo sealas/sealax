@@ -24,13 +24,6 @@ defmodule SealaxWeb.Router do
     plug :get_account
   end
 
-  scope "/items", SealaxWeb do
-    pipe_through :api
-    pipe_through :auth
-
-    resources "/", ItemController
-  end
-
   scope "/auth", SealaxWeb do
     pipe_through :auth_api
 
