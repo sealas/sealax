@@ -6,6 +6,7 @@ defmodule Sealax.Accounts.Item do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
   @primary_key {:id, ItemHashId, read_after_writes: true}
   schema "items" do
     field :content, :string

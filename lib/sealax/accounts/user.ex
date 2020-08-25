@@ -6,6 +6,8 @@ defmodule Sealax.Accounts.User do
   alias Sealax.Accounts.UserTfa
   alias Sealax.Accounts.Account
 
+  @timestamps_opts [type: :utc_datetime_usec]
+
   @doc """
   We only identify users by email. Note that password and password_backup
   are cryptographic hashes, not the original entry!

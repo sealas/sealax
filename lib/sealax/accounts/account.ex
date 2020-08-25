@@ -2,6 +2,7 @@ defmodule Sealax.Accounts.Account do
   use BaseModel, repo: Sealax.Repo
   import Ecto.Changeset
 
+  @timestamps_opts [type: :utc_datetime_usec]
   @primary_key {:id, AccountHashId, read_after_writes: true}
   schema "account" do
     field :name,          :string
