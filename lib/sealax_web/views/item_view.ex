@@ -3,8 +3,11 @@ defmodule SealaxWeb.ItemView do
 
   alias SealaxWeb.ItemView
 
-  def render("index.json", %{item: item}) do
-    %{items: render_many(item, ItemView, "item.json")}
+  def render("index.json", %{item: item, sync_token: sync_token}) do
+    %{
+      items: render_many(item, ItemView, "item.json"),
+      sync_token: sync_token
+    }
   end
 
   def render("show.json", %{item: item}) do
@@ -12,7 +15,10 @@ defmodule SealaxWeb.ItemView do
   end
 
   def render("conflict.json", %{conflict: conflict}) do
-    %{type: conflict.type, server_item: render_one(conflict.server_item, ItemView, "item.json")}
+    %{
+      type: conflict.type,
+      server_item: render_one(conflict.server_item, ItemView, "item.json")
+    }
   end
 
   def render("item.json", %{item: item}) do

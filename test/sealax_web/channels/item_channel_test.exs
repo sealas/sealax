@@ -43,9 +43,25 @@ defmodule SealaxWeb.ItemChannelTest do
       %{socket: socket, item: item}
     end
 
-    test "get all items on join" do
-      assert_push "all_items", %{items: items}
-      assert Enum.count(items) == 1
+    test "get all items", %{socket: socket, account: account} do
+      create = Map.put(@create_attrs, "account_id", account.id)
+      
+      Enum.each(1..100, fn _ -> Item.create(create) end)
+
+      ref = push socket, "get_items", %{}
+
+      assert_reply ref, :all_items, %{items: items, sync_token: sync_token}, 500000
+      assert Enum.count(items) == 101
+      refute is_nil(sync_token)
+
+      Process.sleep(100)
+
+      Enum.each(1..10, fn _ -> Item.create(create) end)
+
+      ref = push socket, "get_items", %{sync_token: sync_token}
+
+      assert_reply ref, :all_items, %{items: items, sync_token: sync_token}, 500000
+      assert Enum.count(items) == 10
     end
 
     test "delete item", %{socket: socket, item: item} do

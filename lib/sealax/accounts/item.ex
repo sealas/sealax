@@ -11,6 +11,7 @@ defmodule Sealax.Accounts.Item do
   schema "items" do
     field :content, :string
     field :content_type, EctoHashedIndex
+    # field :content_index, EctoHashedIndex
     field :deleted, :boolean, default: false
 
     timestamps()
@@ -34,6 +35,37 @@ defmodule Sealax.Accounts.Item do
   def update_changeset(params) do
     %__MODULE__{}
     |> cast(params, [:content, :content_type, :deleted])
+  end
+
+  defmodule Query do
+    import Ecto.Query
+
+    def get_all_by_account_with_token(account_id, sync_token) do
+      sync_token = sync_token |> DateTime.from_unix!(:microsecond)
+      
+      query = get_all_query(account_id) |>
+        where([i], i.updated_at > ^sync_token)
+
+      Sealax.Repo.all(query)
+    end
+
+    def get_all_by_account(account_id) do
+      query = get_all_query(account_id)
+
+      Sealax.Repo.all(query)
+    end
+
+    defp get_all_query(account_id) do
+      from i in Item,
+        select: %{
+          id: i.id,
+          content: i.content,
+          deleted: i.deleted,
+          updated_at: i.updated_at
+        },
+        order_by: [desc: i.updated_at],
+        where: i.account_id == ^account_id
+    end
   end
 
   defmodule SyncManager do
