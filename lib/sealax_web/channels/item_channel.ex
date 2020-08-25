@@ -41,6 +41,12 @@ defmodule SealaxWeb.ItemChannel do
     {:noreply, socket}
   end
 
+  def get_items_reply(items, socket) do
+    sync_token = List.first(items) |> Map.get(:updated_at) |> DateTime.to_unix(:microsecond)
+
+    {:reply, {:all_items, SealaxWeb.ItemView.render("index.json", item: items, sync_token: sync_token)}, socket}
+  end
+
   def handle_in("get_items", %{"sync_token" => sync_token}, %{assigns: %{user: user}} = socket) do
     items = Item.Query.get_all_by_account_with_token(user["account_id"], sync_token)
 
@@ -50,12 +56,6 @@ defmodule SealaxWeb.ItemChannel do
     items = Item.Query.get_all_by_account(user["account_id"])
 
     get_items_reply(items, socket)
-  end
-
-  def get_items_reply(items, socket) do
-    sync_token = List.first(items) |> Map.get(:updated_at) |> DateTime.to_unix(:microsecond)
-
-    {:reply, {:all_items, SealaxWeb.ItemView.render("index.json", item: items, sync_token: sync_token)}, socket}
   end
 
   def handle_in("add_item", %{"item" => params}, %{assigns: %{user: user}} = socket) do
