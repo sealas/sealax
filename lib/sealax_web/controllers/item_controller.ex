@@ -10,11 +10,16 @@ defmodule SealaxWeb.ItemController do
   require Logger
 
   def index(conn, _params) do
-    item = Item.where(account_id: conn.assigns.account_id)
+    items = Item.Query.get_all_by_account(conn.assigns.account_id)
+
+    sync_token = cond do
+      Enum.count(items) > 0 -> List.first(items) |> Map.get(:updated_at)
+      true -> 0
+    end
 
     conn
     |> put_status(:ok)
-    |> render("index.json", item: item)
+    |> render("index.json", item: items, sync_token: sync_token)
   end
 
   def update(conn, %{"id" => id, "item" => params}) do
