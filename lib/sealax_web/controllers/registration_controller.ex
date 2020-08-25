@@ -119,7 +119,7 @@ defmodule SealaxWeb.RegistrationController do
 
   defp token_response(conn, token) do
     token_hash = :crypto.hash(:sha256, token)
-    |> Base.url_encode64
+    |> Base.encode16
 
     token =
     cond do
