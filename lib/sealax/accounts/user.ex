@@ -52,6 +52,7 @@ defmodule Sealax.Accounts.User do
     |> cast(params, [:email, :password, :password_hint, :settings, :appkey, :appkey_salt, :account_id, :verified])
     |> validate_required([:email, :appkey, :appkey_salt, :account_id])
     |> validate_format(:email, ~r/@/)
+    |> validate_length(:password, min: 64, max: 256)
     |> unique_constraint(:email)
   end
 
@@ -78,5 +79,9 @@ defmodule Sealax.Accounts.User do
     user
     |> cast(params, [:email, :password, :password_hint, :verified, :active, :settings, :appkey, :account_id, :appkey_salt])
     |> cast_embed(:tfa)
+  end
+
+  def nospam?(%User{} = user) do
+    Timex.after?(Timex.now, user.updated_at |> Timex.shift(minutes: 1))
   end
 end
