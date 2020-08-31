@@ -17,7 +17,7 @@ defmodule SealaxWeb.ItemChannelTest do
       assert :error == connect(UserSocket, %{"token" => "asdf"})
     end
 
-    @tag :authorized
+    @tag setup: true, create_user: true, auth_user: true
     test "refuse connection for unauthorized channel", %{token: token} do
       assert {:ok, socket} = connect(UserSocket, %{"token" => token})
 
@@ -27,7 +27,7 @@ defmodule SealaxWeb.ItemChannelTest do
   end
 
   describe "item channel" do
-    @describetag :authorized
+    @describetag setup: true, create_user: true, auth_user: true
 
     setup (context) do
       create = Map.put(@create_attrs, "account_id", context.account.id)

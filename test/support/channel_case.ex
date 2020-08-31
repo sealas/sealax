@@ -41,19 +41,40 @@ defmodule SealaxWeb.ChannelCase do
       Ecto.Adapters.SQL.Sandbox.mode(Sealax.Repo, {:shared, self()})
     end
 
-    if tags[:authorized] do
-      {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
+    setup = {:ok, %{}}
 
-      {:ok, user} = %User{}
-      |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true, account_id: account.id, appkey: "encrypted_appkey"})
-      |> Repo.insert()
-
-      token_content = %{id: user.id, account_id: account.id}
-      {:ok, token}  = AuthToken.generate_token(token_content)
-
-      {:ok, account: account, user: user, token: token}
+    if tags[:setup] do
+      setup
+      |> create_user(tags)
+      |> auth_user(tags)
     else
-      :ok
+      setup
     end
   end
+
+  defp create_user({:ok, items}, %{:create_user => true}) do
+    {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
+
+    {:ok, user} = %User{}
+    |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true, account_id: account.id, appkey: "encrypted_appkey"})
+    |> Repo.insert()
+
+    items = items
+    |> Map.put(:account, account)
+    |> Map.put(:user, user)
+
+    {:ok, items}
+  end
+  defp create_user(setup, _), do: setup
+
+  defp auth_user({:ok, items}, %{:auth_user => true}) do
+    token_content = %{id: items.user.id, account_id: items.account.id}
+    {:ok, token}  = AuthToken.generate_token(token_content)
+
+    items = items
+    |> Map.put(:token, token)
+
+    {:ok, items}
+  end
+  defp auth_user(setup, _), do: setup
 end
