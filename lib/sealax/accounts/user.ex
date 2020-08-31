@@ -58,8 +58,14 @@ defmodule Sealax.Accounts.User do
   @spec update_changeset(map, map) :: %Ecto.Changeset{}
   def update_changeset(model, params) do
     model
-    |> cast(params, [:password, :password_hint, :settings, :verified, :active, :recovery_code, :appkey, :appkey_salt])
+    |> cast(params, [:settings, :verified, :active, :recovery_code])
     |> cast_embed(:tfa)
+  end
+
+  def update_password_changeset(%User{} = user, params) do
+    user
+    |> cast(params, [:password, :password_hint, :appkey, :appkey_salt])
+    |> validate_length(:password, min: 64, max: 256)
   end
 
   @doc """
@@ -68,9 +74,9 @@ defmodule Sealax.Accounts.User do
   Only during testing do we ever need to create a user from a blob of hash attributes
   """
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
-  def create_test_changeset(%User{} = user, attrs) do
+  def create_test_changeset(%User{} = user, params) do
     user
-    |> cast(attrs, [:email, :password, :password_hint, :verified, :active, :settings, :appkey, :account_id, :appkey_salt])
+    |> cast(params, [:email, :password, :password_hint, :verified, :active, :settings, :appkey, :account_id, :appkey_salt])
     |> cast_embed(:tfa)
   end
 end

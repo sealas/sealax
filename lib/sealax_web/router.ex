@@ -77,6 +77,7 @@ defmodule SealaxWeb.Router do
       !is_nil(token["account_id"]) && is_nil(token["tfa_token"]) ->
         conn
         |> assign(:account_id, token["account_id"])
+        |> assign(:user_id, token["id"])
       true ->
         conn
         |> put_resp_content_type("application/json")

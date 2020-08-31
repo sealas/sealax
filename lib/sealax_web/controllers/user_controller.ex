@@ -6,7 +6,8 @@ defmodule SealaxWeb.UserController do
   use SealaxWeb, :controller
 
   alias Sealax.Accounts.User
-  alias Sealax.Accounts.Account
+  # alias Sealax.Accounts.Account
+  alias Sealax.Repo
 
   action_fallback SealaxWeb.FallbackController
 
@@ -20,11 +21,22 @@ defmodule SealaxWeb.UserController do
     |> send_resp(:ok, "{\"yeah\": \"sure\"}")
   end
 
-  def update(conn, %{"password" => password, "password_hint" => password_hint, "appkey" => appkey, "appkey_salt" => appkey_salt} = params) do
-    # 
+  def create(conn, %{"password" => password, "password_hint" => password_hint, "appkey" => appkey, "appkey_salt" => appkey_salt} = params) do
+    user = User.find(conn.assigns.user_id)
+
+    changeset = User.update_password_changeset(user, params)
+
+    case Repo.update(changeset) do
+      {:error, error} ->
+        conn
+        |> render("error.json", error: error)
+      {:ok, _user} ->
+        conn
+        |> render("status.json", status: "ok")
+    end
   end
 
-  def update(conn, %{"otp" => otp, "device_hash" => device_hash} = params) do
-    # 
+  def create(conn, %{"otp" => otp, "device_hash" => device_hash} = params) do
+    #
   end
 end
