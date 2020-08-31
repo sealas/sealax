@@ -67,7 +67,7 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(Routes.item_path(conn, :index))
+      |> get(Routes.user_path(conn, :index))
 
       assert json_response(conn, 200)
     end
@@ -78,7 +78,7 @@ defmodule Sealax.AuthControllerTest do
     end
 
     test "get 401 for protected route", %{conn: conn} do
-      conn = get conn, Routes.item_path(conn, :index)
+      conn = get conn, Routes.user_path(conn, :index)
 
       assert json_response(conn, 401) == %{"error" => "auth_fail"}
     end
@@ -98,7 +98,7 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(Routes.item_path(conn, :index))
+      |> get(Routes.user_path(conn, :index))
 
       assert json_response(conn, 401) == %{"error" => "timeout"}
     end
@@ -111,7 +111,7 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> stale_token)
-      |> get(Routes.item_path(conn, :index))
+      |> get(Routes.user_path(conn, :index))
 
       assert json_response(conn, 401) == %{"error" => "needs_refresh"}
 
@@ -125,7 +125,7 @@ defmodule Sealax.AuthControllerTest do
       conn = conn
       |> recycle()
       |> put_req_header("authorization", "bearer: " <> auth_token)
-      |> get(Routes.item_path(conn, :index))
+      |> get(Routes.user_path(conn, :index))
 
       assert json_response(conn, 200)
     end
@@ -192,7 +192,7 @@ defmodule Sealax.AuthControllerTest do
       |> recycle()
       |> Plug.Conn.put_req_header("authorization", "bearer: " <> tfa_token)
 
-      conn = post conn, Routes.item_path(conn, :create), item: %{}
+      conn = post conn, Routes.user_path(conn, :create), item: %{}
       assert %{"error" => error} = json_response(conn, 401)
     end
 

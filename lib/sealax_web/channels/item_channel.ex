@@ -33,6 +33,8 @@ defmodule SealaxWeb.ItemChannel do
     end
   end
 
+  def handle_info(:after_join, socket), do: {:noreply, socket}
+
   def get_items_reply(items, socket) do
     sync_token = List.first(items) |> Map.get(:updated_at) |> DateTime.to_unix(:microsecond)
 
