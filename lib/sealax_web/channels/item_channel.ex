@@ -33,14 +33,6 @@ defmodule SealaxWeb.ItemChannel do
     end
   end
 
-  def handle_info(:after_join, %{assigns: %{user: user}} = socket) do
-    # items = Item.where(account_id: user["account_id"])
-
-    # push socket, "all_items", SealaxWeb.ItemView.render("index.json", item: items)
-
-    {:noreply, socket}
-  end
-
   def get_items_reply(items, socket) do
     sync_token = List.first(items) |> Map.get(:updated_at) |> DateTime.to_unix(:microsecond)
 
