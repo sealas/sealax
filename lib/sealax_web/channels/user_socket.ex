@@ -34,7 +34,10 @@ defmodule SealaxWeb.UserSocket do
 
   # Make sure token is actually an auth token.
   defp token_valid?(token) do
-    is_nil(token["tfa_key"]) && !is_nil(token["account_id"])
+    is_nil(token["tfa_key"])
+    && !is_nil(token["account_id"])
+    && !AuthToken.is_timedout?(token)
+    && !AuthToken.needs_refresh?(token)
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
