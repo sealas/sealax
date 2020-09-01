@@ -6,6 +6,7 @@ defmodule SealaxWeb.UserController do
   use SealaxWeb, :controller
 
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.UserOTP
   # alias Sealax.Accounts.Account
   alias Sealax.Repo
 
@@ -21,7 +22,7 @@ defmodule SealaxWeb.UserController do
     |> send_resp(:ok, "{\"yeah\": \"sure\"}")
   end
 
-  def create(conn, %{"password" => password, "password_hint" => password_hint, "appkey" => appkey, "appkey_salt" => appkey_salt} = params) do
+  def create(conn, %{"password" => _password, "password_hint" => _password_hint, "appkey" => _appkey, "appkey_salt" => _appkey_salt} = params) do
     user = User.find(conn.assigns.user_id)
 
     changeset = User.update_password_changeset(user, params)
@@ -36,7 +37,17 @@ defmodule SealaxWeb.UserController do
     end
   end
 
-  def create(conn, %{"otp" => otp, "device_hash" => device_hash} = params) do
-    #
+  def create(conn, %{"appkey" => _appkey, "device_hash" => _device_hash} = params) do
+    user = User.find(conn.assigns.user_id)
+
+    with {:ok, %UserOTP{}} <- UserOTP.create(params |> Map.put("user_id", user.id))
+    do
+      conn
+      |> render("status.json", status: "ok")
+    else
+      err -> conn
+      |> put_status(:bad_request)
+      |> render("error.json", error: err)
+    end
   end
 end

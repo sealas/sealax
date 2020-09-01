@@ -21,6 +21,11 @@ defmodule SealaxWeb.ConnCase do
   alias Sealax.Accounts.User
   alias Sealax.Accounts.Account
 
+  @default_account %{name: "Test Account", slug: "test_account"}
+  def default_account, do: @default_account
+  @default_user %{email: "some@email.com", password: "some password", active: true, appkey: "encrypted_appkey"}
+  def default_user, do: @default_user
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -57,10 +62,10 @@ defmodule SealaxWeb.ConnCase do
   end
 
   defp create_user({:ok, items}, %{:create_user => true}) do
-    {:ok, %Account{} = account} = Account.create(name: "Test Account", slug: "test_account")
+    {:ok, %Account{} = account} = Account.create(@default_account)
 
     {:ok, user} = %User{}
-    |> User.create_test_changeset(%{email: "some@email.com", password: "some password", active: true, account_id: account.id, appkey: "encrypted_appkey"})
+    |> User.create_test_changeset(@default_user |> Map.put(:account_id, account.id))
     |> Repo.insert()
 
     items = items

@@ -8,9 +8,14 @@ defmodule SealaxWeb.AuthController do
 
   alias Sealax.Accounts.Account
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.UserOTP
   alias Sealax.Accounts.UserTfa
 
   action_fallback SealaxWeb.FallbackController
+
+  @env Mix.env()
+
+  defp env, do: @env
 
   @doc """
   Login entry point for auth with email and password.
@@ -123,6 +128,48 @@ defmodule SealaxWeb.AuthController do
       |> put_status(:unauthorized)
       |> render("error.json")
     end
+  end
+
+  def index(conn, %{"email" => email, "device_hash" => device_hash}) do
+    with user <- User.first(email: email),
+      otp <- UserOTP.first(user_id: user.id, device_hash: device_hash)
+    do
+      token = otp_token(email, device_hash)
+
+      Phoenix.PubSub.broadcast(:sealax_pubsub, "user:otp_login", %{email: email, verification_code: token})
+
+      conn
+      |> put_status(:created)
+      |> token_response(token)
+    else
+      _ ->
+      conn
+      |> put_status(:unauthorized)
+      |> render("error.json")
+    end
+  end
+
+  defp token_response(conn, token) do
+    token_hash = :crypto.hash(:sha256, token)
+    |> Base.encode16
+
+    always_send_token = Application.get_env(:sealax, :always_send_token)
+
+    token =
+    cond do
+      env() !== :prod || always_send_token -> token
+      true -> ""
+    end
+
+    render(conn, "otp.json", status: "verify_token", token_hash: token_hash, token: token)
+  end
+
+  defp otp_token(email, device_hash) do
+    user_params = %{email: email, device_hash: device_hash}
+
+    {:ok, token} = AuthToken.generate_token(user_params)
+
+    Base.url_encode64(token)
   end
 
   @doc """

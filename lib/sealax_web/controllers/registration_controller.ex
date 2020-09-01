@@ -121,10 +121,12 @@ defmodule SealaxWeb.RegistrationController do
     token_hash = :crypto.hash(:sha256, token)
     |> Base.encode16
 
+    always_send_token = Application.get_env(:sealax, :always_send_token)
+
     token =
     cond do
-      env() === :prod -> ""
-      true -> token
+      env() !== :prod || always_send_token -> token
+      true -> ""
     end
 
     render(conn, "token.json", status: "verify_token", token_hash: token_hash, token: token)

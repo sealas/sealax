@@ -1,17 +1,9 @@
 defmodule Sealax.UserControllerTest do
   use SealaxWeb.ConnCase
 
-  alias Sealax.Accounts
-  alias Sealax.Accounts.User
-
   @update_password %{password: "new_hashed_pw", password_hint: "guess it", appkey: "newly_encrypted_appkey", appkey_salt: "newly_generated_appkey_salt"}
 
-  @add_otp %{otp: "encrypted_key", device_hash: "pew_pew"}
-
-  def fixture(:user) do
-    {:ok, user} = Accounts.create_user(@create_attrs)
-    user
-  end
+  @add_otp %{appkey: "encrypted_key", device_hash: "pew_pew"}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -26,15 +18,32 @@ defmodule Sealax.UserControllerTest do
   describe "update user" do
     @describetag setup: true, create_user: true, auth_user: true
 
-    test "update password", %{conn: conn} do
+    test "update password and verify auth", %{conn: conn, user: user} do
+      conn = post conn, Routes.auth_path(conn, :index), %{email: default_user().email, password: default_user().password}
+
+      assert auth = json_response(conn, 201)
+
       conn = post conn, Routes.user_path(conn, :create), @update_password
   
       assert json_response(conn, 200) == %{"status" => "ok"}
-    end
-  end
 
-  defp create_user(_) do
-    user = fixture(:user)
-    {:ok, user: user}
+      conn = post conn, Routes.auth_path(conn, :index), %{email: user.email, password: @update_password.password}
+
+      assert auth = json_response(conn, 201)
+
+      conn = post conn, Routes.auth_path(conn, :index), %{email: default_user().email, password: default_user().password}
+
+      assert auth = json_response(conn, 401)
+    end
+
+    test "add otp and verify auth", %{conn: conn} do
+      conn = post conn, Routes.user_path(conn, :create), @add_otp
+
+      assert json_response(conn, 200) == %{"status" => "ok"}
+
+      conn = post conn, Routes.auth_path(conn, :index), %{email: default_user().email, device_hash: @add_otp.device_hash}
+
+      assert %{"status" => status, "token" => token, "token_hash" => token_hash} = json_response(conn, 201)
+    end
   end
 end
