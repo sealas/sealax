@@ -30,3 +30,6 @@ config :sealax, Sealax.Yubikey,
 
 config :ex_unit,
   assert_receive_timeout: 1000
+
+config :sealax,
+  token_spam_time: [milliseconds: 500]

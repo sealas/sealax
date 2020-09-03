@@ -9,7 +9,8 @@ use Mix.Config
 
 config :sealax,
   ecto_repos: [Sealax.Repo],
-  always_send_token: false
+  always_send_token: false,
+  token_spam_time: %{minutes: 1}
 
 # Configures the endpoint
 config :sealax, SealaxWeb.Endpoint,

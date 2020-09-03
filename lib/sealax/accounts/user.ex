@@ -1,5 +1,6 @@
 defmodule Sealax.Accounts.User do
   use BaseModel, repo: Sealax.Repo
+  use Ecto.Schema
   import Ecto.Changeset
 
   alias Sealax.Accounts.User
@@ -39,7 +40,7 @@ defmodule Sealax.Accounts.User do
   @spec create_random_password(integer) :: String.t
   def create_random_password(length \\ 16) do
     :crypto.strong_rand_bytes(length)
-    |> Base.url_encode64
+    |> Base.url_encode64(padding: false)
     |> binary_part(0, length)
   end
 
@@ -69,6 +70,11 @@ defmodule Sealax.Accounts.User do
     |> validate_length(:password, min: 64, max: 256)
   end
 
+  def token_changeset(%User{} = user, params) do
+    user
+    |> cast(params, [:updated_at])
+  end
+
   @doc """
   Just for testing
 
@@ -81,7 +87,31 @@ defmodule Sealax.Accounts.User do
     |> cast_embed(:tfa)
   end
 
+  def user_token(%User{} = user, token_content) do
+    cond do
+      nospam?(user) ->
+        time = Timex.now
+
+        user
+        |> cast(%{updated_at: time}, [:updated_at])
+        |> Sealax.Repo.update()
+
+        {:ok, token} = token_content
+        |> Map.put(:updated_at, time |> DateTime.to_unix(:microsecond))
+        |> AuthToken.generate_token()
+
+        {:ok, Base.url_encode64(token, padding: false)}
+      true ->
+        {:error, :spam}
+    end
+  end
+
   def nospam?(%User{} = user) do
-    Timex.after?(Timex.now, user.updated_at |> Timex.shift(minutes: 1))
+    token_spam_time = Application.get_env(:sealax, :token_spam_time)
+
+    Timex.after?(
+      Timex.now,
+      user.updated_at |> Timex.shift(token_spam_time)
+    )
   end
 end

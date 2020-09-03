@@ -1,12 +1,8 @@
 defmodule SealaxWeb.AuthView do
   use SealaxWeb, :view
 
-  def render("error.json", _params) do
-    %{error: "auth fail"}
-  end
-
-  def render("inactive.json", _params) do
-    %{error: "inactive"}
+  def render("error.json", %{error: error}) do
+    %{error: error}
   end
 
   def render("tfa.json", %{token: token}) do

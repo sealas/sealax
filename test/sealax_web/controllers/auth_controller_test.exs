@@ -74,7 +74,7 @@ defmodule Sealax.AuthControllerTest do
 
     test "fail to authenticate with wrong password", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @failed_login
-      assert json_response(conn, 401) == %{"error" => "auth fail"}
+      assert json_response(conn, 401) == %{"error" => "auth_fail"}
     end
 
     test "get 401 for protected route", %{conn: conn} do
@@ -198,7 +198,7 @@ defmodule Sealax.AuthControllerTest do
 
     test "fail to authenticate with wrong password", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @failed_login
-      assert json_response(conn, 401) == %{"error" => "auth fail"}
+      assert json_response(conn, 401) == %{"error" => "auth_fail"}
     end
 
     test "failed authentication with TFA", %{conn: conn} do
@@ -206,10 +206,10 @@ defmodule Sealax.AuthControllerTest do
       assert %{"tfa" => true, "token" => tfa_token} = json_response(conn, 201)
 
       conn = post conn, Routes.auth_path(conn, :index), %{token: "wrong code!", auth_key: "wrong key!"}
-      assert json_response(conn, 401) == %{"error" => "auth fail"}
+      assert json_response(conn, 401) == %{"error" => "auth_fail"}
 
       conn = post conn, Routes.auth_path(conn, :index), %{token: tfa_token, auth_key: "wrong key!"}
-      assert json_response(conn, 401) == %{"error" => "auth fail"}
+      assert json_response(conn, 401) == %{"error" => "auth_fail"}
     end
   end
 

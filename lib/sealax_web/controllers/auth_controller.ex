@@ -41,8 +41,7 @@ defmodule SealaxWeb.AuthController do
       user && user.active && EctoHashedPassword.checkpw(password, user.password) ->
         account = Account.find(user.account_id)
 
-        token_content = %{id: user.id, account_id: account.id}
-        {:ok, token} = AuthToken.generate_token(token_content)
+        token = generate_auth_token(user.id, account.id)
 
         conn
         |> put_status(:created) # http 201
@@ -52,13 +51,13 @@ defmodule SealaxWeb.AuthController do
       user && !user.active ->
         conn
         |> put_status(:bad_request)
-        |> render("inactive.json")
+        |> render("error.json", %{error: "inactive"})
 
       # invalid login, for which ever reason
       true ->
         conn
         |> put_status(:unauthorized) # http 401
-        |> render("error.json")
+        |> render("error.json", %{error: "auth_fail"})
     end
   end
 
@@ -83,8 +82,7 @@ defmodule SealaxWeb.AuthController do
         {:ok}        == tfa_match(user, usertfa)   ->
           User.update(user, recovery_code: nil)
 
-          token_content = %{id: user.id, account_id: account.id}
-          {:ok, token}  = AuthToken.generate_token(token_content)
+          token = generate_auth_token(user.id, account.id)
 
           conn
           |> put_status(:created) # http 201
@@ -92,13 +90,13 @@ defmodule SealaxWeb.AuthController do
         true ->
           conn
           |> put_status(:unauthorized) # http 401
-          |> render("error.json")
+          |> render("error.json", %{error: "auth_fail"})
       end
     else
       _ ->
       conn
       |> put_status(:unauthorized) # http 401
-      |> render("error.json")
+      |> render("error.json", %{error: "auth_fail"})
     end
   end
 
@@ -120,33 +118,80 @@ defmodule SealaxWeb.AuthController do
         true ->
           conn
           |> put_status(:unauthorized)
-          |> render("error.json")
+          |> render("error.json", %{error: "auth_fail"})
       end
     else
       _ ->
       conn
       |> put_status(:unauthorized)
-      |> render("error.json")
+      |> render("error.json", %{error: "auth_fail"})
     end
   end
 
+  @doc """
+  Request for OTP login
+  """
   def index(conn, %{"email" => email, "device_hash" => device_hash}) do
     with user <- User.first(email: email),
-      otp <- UserOTP.first(user_id: user.id, device_hash: device_hash)
+      user when not is_nil(user) <- user,
+      otp <- UserOTP.first(user_id: user.id, device_hash: device_hash),
+      otp when not is_nil(otp) <- otp,
+      {:ok, token} <- User.user_token(user, %{id: user.id, device_hash: device_hash, otp_id: otp.id})
     do
-      token = otp_token(email, device_hash)
-
       Phoenix.PubSub.broadcast(:sealax_pubsub, "user:otp_login", %{email: email, verification_code: token})
 
       conn
       |> put_status(:created)
       |> token_response(token)
     else
-      _ ->
-      conn
-      |> put_status(:unauthorized)
-      |> render("error.json")
+      e ->
+        conn = conn
+        |> put_status(:unauthorized)
+        
+        case e do
+          {:error, :spam} ->
+            render(conn, "error.json", %{error: "token_spam"})
+          _ ->
+            render(conn, "error.json", %{error: "auth_fail"})
+        end
     end
+  end
+
+  def index(conn, %{"otp_token" => otp_token}) do
+    with {:ok, decoded_token} <- Base.url_decode64(otp_token, padding: false),
+         {:ok, token} <- AuthToken.decrypt_token(decoded_token),
+         user         <- User.first(id: token["id"]),
+         user when not is_nil(user) <- user,
+         account      <- Account.find(user.account_id),
+         otp          <- UserOTP.find(token["otp_id"])
+    do
+      cond do
+        token["updated_at"] == user.updated_at |> DateTime.to_unix(:microsecond) ->
+          token = generate_auth_token(user.id, account.id)
+
+          UserOTP.delete(otp.id)
+
+          conn
+          |> put_status(:created) # http 201
+          |> render("auth.json", %{token: token, account_id: account.id, appkey: otp.appkey, appkey_salt: ""})
+        true ->
+          conn
+          |> put_status(:unauthorized)
+          |> render("error.json", %{error: "outdated_otp_token"})
+      end
+    else
+      _ ->
+        conn
+        |> put_status(:unauthorized)
+        |> render("error.json", %{error: "auth_fail"})
+    end
+  end
+
+  defp generate_auth_token(user_id, account_id) do
+    token_content = %{id: user_id, account_id: account_id}
+    {:ok, token} = AuthToken.generate_token(token_content)
+
+    token
   end
 
   defp token_response(conn, token) do
@@ -162,14 +207,6 @@ defmodule SealaxWeb.AuthController do
     end
 
     render(conn, "otp.json", status: "verify_token", token_hash: token_hash, token: token)
-  end
-
-  defp otp_token(email, device_hash) do
-    user_params = %{email: email, device_hash: device_hash}
-
-    {:ok, token} = AuthToken.generate_token(user_params)
-
-    Base.url_encode64(token)
   end
 
   @doc """

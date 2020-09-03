@@ -137,11 +137,11 @@ defmodule SealaxWeb.RegistrationController do
 
     {:ok, token} = AuthToken.generate_token(user_params)
 
-    Base.url_encode64(token)
+    Base.url_encode64(token, padding: false)
   end
 
   defp check_token(token) do
-    with {:ok, token} <- Base.url_decode64(token),
+    with {:ok, token} <- Base.url_decode64(token, padding: false),
       {:ok, content} <- AuthToken.decrypt_token(token)
     do
       case Timex.after?(Timex.now, Timex.from_unix(content["ct"]) |> Timex.shift(minutes: 300)) do
