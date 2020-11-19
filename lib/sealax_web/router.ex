@@ -24,18 +24,19 @@ defmodule SealaxWeb.Router do
     plug :get_account
   end
 
-  scope "/user", SealaxWeb do
-    pipe_through :api
-    pipe_through :auth
-
-    resources "/", UserController
-  end
-
   scope "/auth", SealaxWeb do
     pipe_through :auth_api
 
     post "/", AuthController, :index
     resources "/registration", RegistrationController
+  end
+
+  scope "/", SealaxWeb do
+    pipe_through :api
+    pipe_through :auth
+
+    resources "/user", UserController
+    resources "/workspaces", WorkspaceController
   end
 
   # Enables LiveDashboard only for development
