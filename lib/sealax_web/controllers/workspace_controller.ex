@@ -35,17 +35,17 @@ defmodule SealaxWeb.WorkspaceController do
     end
   end
 
-  def update(conn, %{"name" => _name} = params) do
+  def update(conn, %{"id" => id, "name" => name} = params) do
     user = User.find(conn.assigns.user_id)
 
-    with {:ok, %Workspace{}} <- Workspace.update_where(params, owner_id: user.id)
-    do
-      conn
-      |> render("status.json", status: "ok")
-    else
-      err -> conn
-      |> put_status(:bad_request)
-      |> render("error.json", error: err)
+    case Workspace.update_where(%{owner_id: user.id, id: id}, %{name: name}) do
+      {:ok, 1} ->
+        conn
+        |> render("status.json", status: "ok")
+      {:ok, 0} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("error.json", error: "no_update")
     end
   end
 end
