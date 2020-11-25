@@ -61,11 +61,12 @@ defmodule SealaxWeb.ConnCase do
     end
   end
 
-  defp create_user({:ok, items}, %{:create_user => true}) do
+  def create_user(setup, create_user, user \\ nil)
+  def create_user({:ok, items}, %{:create_user => true}, user) do
     {:ok, %Account{} = account} = Account.create(@default_account)
 
     {:ok, user} = %User{}
-    |> User.create_test_changeset(@default_user |> Map.put(:account_id, account.id))
+    |> User.create_test_changeset((user || @default_user) |> Map.put(:account_id, account.id))
     |> Repo.insert()
 
     items = items
@@ -74,9 +75,9 @@ defmodule SealaxWeb.ConnCase do
 
     {:ok, items}
   end
-  defp create_user(setup, _), do: setup
+  def create_user(setup, _, _), do: setup
 
-  defp auth_user({:ok, items}, %{:auth_user => true}) do
+  def auth_user({:ok, items}, %{:auth_user => true}) do
     token_content = %{id: items.user.id, account_id: items.account.id}
     {:ok, token}  = AuthToken.generate_token(token_content)
 
@@ -89,5 +90,5 @@ defmodule SealaxWeb.ConnCase do
 
     {:ok, items}
   end
-  defp auth_user(setup, _), do: setup
+  def auth_user(setup, _), do: setup
 end
