@@ -52,16 +52,25 @@ defmodule Sealax.AuthControllerTest do
     end
   end
 
+  describe "login to workspace" do
+    @describetag setup: true, create_user: true, auth_user: true, create_workspace: true
+
+    test "successful authentication with a workspace", %{conn: conn, token: auth_token, workspace: workspace} do
+      conn = post conn, Routes.auth_path(conn, :index), %{token: auth_token, workspace_id: workspace.id}
+
+      assert %{
+        "token" => auth_token
+      } = json_response(conn, 201)
+    end
+  end
+
   describe "login" do
     setup [:create_user]
 
     test "successful authentication as a user", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
       assert %{
-        "token" => auth_token,
-        "account_id" => account_id,
-        "appkey" => appkey,
-        "appkey_salt" => appkey_salt
+        "token" => auth_token
       } = json_response(conn, 201)
 
       conn = conn
@@ -86,10 +95,7 @@ defmodule Sealax.AuthControllerTest do
     test "deny request with timedout token", %{conn: conn} do
       conn = post conn, Routes.auth_path(conn, :index), @valid_login
       assert %{
-        "token" => auth_token,
-        "account_id" => account_id,
-        "appkey" => appkey,
-        "appkey_salt" => appkey_salt
+        "token" => auth_token
       } = json_response(conn, 201)
 
       {:ok, token} = AuthToken.decrypt_token(auth_token)
@@ -167,10 +173,7 @@ defmodule Sealax.AuthControllerTest do
 
       conn = post conn, Routes.auth_path(conn, :index), %{token: tfa_token, auth_key: @test_yubikey}
       assert %{
-        "token" => _auth_token,
-        "account_id" => _account_id,
-        "appkey" => _appkey,
-        "appkey_salt" => _appkey_salt
+        "token" => _auth_token
       } = json_response(conn, 201)
     end
 

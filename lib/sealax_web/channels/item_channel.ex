@@ -5,9 +5,9 @@ defmodule SealaxWeb.ItemChannel do
 
   require Logger
 
-  def join("item:" <> account_id, _payload, %{assigns: %{user: user}} = socket) do
+  def join("item:" <> workspace_id, _payload, %{assigns: %{user: user}} = socket) do
     cond do
-      account_id == user["account_id"] ->
+      workspace_id == user["workspace_id"] ->
         case check_token(user) do
           {:ok} ->
             send(self(), :after_join)
@@ -22,7 +22,7 @@ defmodule SealaxWeb.ItemChannel do
 
   defp check_token(token) do
     cond do
-      !is_nil(token["tfa_key"]) || is_nil(token["account_id"]) ->
+      !is_nil(token["tfa_key"]) || is_nil(token["workspace_id"]) ->
         {:error, :invalid_token}
       AuthToken.is_timedout?(token) ->
         {:error, :timeout}
@@ -42,19 +42,19 @@ defmodule SealaxWeb.ItemChannel do
   end
 
   def handle_in("get_items", %{"sync_token" => sync_token}, %{assigns: %{user: user}} = socket) do
-    items = Item.Query.get_all_by_account_with_token(user["account_id"], sync_token)
+    items = Item.Query.get_all_with_token(user["workspace_id"], sync_token)
 
     get_items_reply(items, socket)
   end
   def handle_in("get_items", _params, %{assigns: %{user: user}} = socket) do
-    items = Item.Query.get_all_by_account(user["account_id"])
+    items = Item.Query.get_all(user["workspace_id"])
 
     get_items_reply(items, socket)
   end
 
   def handle_in("add_item", %{"item" => params}, %{assigns: %{user: user}} = socket) do
     params = params
-    |> Map.put("account_id", user["account_id"])
+    |> Map.put("workspace_id", user["workspace_id"])
 
     case Item.create(params) do
       {:ok, %Item{} = item} ->
@@ -67,7 +67,7 @@ defmodule SealaxWeb.ItemChannel do
   end
 
   def handle_in("update_item", %{"id" => id, "item" => params}, %{assigns: %{user: user}} = socket) do
-    case Item.SyncManager.sync(user["account_id"], id, params) do
+    case Item.SyncManager.sync(user["workspace_id"], id, params) do
       {:ok, item} ->
         broadcast_from socket, "update_item", SealaxWeb.ItemView.render("show.json", item: item)
 
@@ -78,7 +78,7 @@ defmodule SealaxWeb.ItemChannel do
   end
 
   def handle_in("delete_item", %{"id" => id}, %{assigns: %{user: user}} = socket) do
-    case Item.delete_where(id: id, account_id: user["account_id"]) do
+    case Item.delete_where(id: id, workspace_id: user["workspace_id"]) do
       {:ok, 0} ->
         {:reply, {:error, %{id: id}}, socket}
       {:ok, _} ->

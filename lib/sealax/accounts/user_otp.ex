@@ -3,11 +3,13 @@ defmodule Sealax.Accounts.UserOTP do
   import Ecto.Changeset
 
   alias Sealax.Accounts.User
+  alias Sealax.Accounts.Workspace
 
   schema "user_otp" do
     field :appkey,      :string
     field :device_hash, :string
-
+    
+    belongs_to :workspace, Workspace, type: WorkspaceHashId
     belongs_to :user, User
 
     timestamps()

@@ -75,9 +75,8 @@ defmodule SealaxWeb.Router do
     {:ok, token} = AuthToken.decrypt_token(conn)
 
     cond do
-      !is_nil(token["account_id"]) && is_nil(token["tfa_token"]) ->
+      is_nil(token["tfa_token"]) ->
         conn
-        |> assign(:account_id, token["account_id"])
         |> assign(:user_id, token["id"])
       true ->
         conn

@@ -17,12 +17,7 @@ defmodule SealaxWeb.AuthView do
     %{status: status, token_hash: token_hash, token: token}
   end
 
-  def render("auth.json", %{token: token, account_id: account_id, appkey: appkey, appkey_salt: appkey_salt}) do
-    %{
-      token: token,
-      account_id: account_id,
-      appkey: appkey,
-      appkey_salt: appkey_salt
-    }
+  def render("auth.json", %{token: token}) do
+    %{token: token}
   end
 end

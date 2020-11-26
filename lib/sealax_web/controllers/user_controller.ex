@@ -12,16 +12,15 @@ defmodule SealaxWeb.UserController do
 
   action_fallback SealaxWeb.FallbackController
 
-  @env Mix.env()
-
-  defp env, do: @env
-
   def index(conn, _params) do
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(:ok, "{\"yeah\": \"sure\"}")
   end
 
+  @doc """
+  Changing your password is a `create` action because we extract the user id from the token, not a URL param.
+  """
   def create(conn, %{"password" => _password, "password_hint" => _password_hint, "appkey" => _appkey, "appkey_salt" => _appkey_salt} = params) do
     user = User.find(conn.assigns.user_id)
 

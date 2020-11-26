@@ -17,7 +17,7 @@ defmodule SealaxWeb.ItemChannelTest do
       assert :error == connect(UserSocket, %{"token" => "asdf"})
     end
 
-    @tag setup: true, create_user: true, auth_user: true
+    @tag setup: true, create_user: true, create_workspace: true, auth_user: true
     test "refuse connection for unauthorized channel", %{token: token} do
       assert {:ok, socket} = connect(UserSocket, %{"token" => token})
 
@@ -27,10 +27,10 @@ defmodule SealaxWeb.ItemChannelTest do
   end
 
   describe "item channel" do
-    @describetag setup: true, create_user: true, auth_user: true
+    @describetag setup: true, create_user: true, create_workspace: true, auth_user: true
 
     setup (context) do
-      create = Map.put(@create_attrs, "account_id", context.account.id)
+      create = Map.put(@create_attrs, "workspace_id", context.workspace.id)
       {:ok, item} = Item.create(create)
 
       {:ok, socket} = connect(
@@ -38,13 +38,13 @@ defmodule SealaxWeb.ItemChannelTest do
         %{"token" => context.token}
       )
       {:ok, _, socket} = socket
-      |> subscribe_and_join(ItemChannel, "item:" <> context.account.id)
+      |> subscribe_and_join(ItemChannel, "item:" <> context.workspace.id)
 
       %{socket: socket, item: item}
     end
 
-    test "get all items", %{socket: socket, account: account} do
-      create = Map.put(@create_attrs, "account_id", account.id)
+    test "get all items", %{socket: socket, workspace: workspace} do
+      create = Map.put(@create_attrs, "workspace_id", workspace.id)
       
       Enum.each(1..100, fn _ -> Item.create(create) end)
 

@@ -6,10 +6,10 @@ defmodule SealaxWeb.AuthController do
 
   use SealaxWeb, :controller
 
-  alias Sealax.Accounts.Account
   alias Sealax.Accounts.User
   alias Sealax.Accounts.UserOTP
   alias Sealax.Accounts.UserTfa
+  alias Sealax.Accounts.UserWorkspace
 
   action_fallback SealaxWeb.FallbackController
 
@@ -39,13 +39,11 @@ defmodule SealaxWeb.AuthController do
 
       # Valid Login (no TFA)
       user && user.active && EctoHashedPassword.checkpw(password, user.password) ->
-        account = Account.find(user.account_id)
-
-        token = generate_auth_token(user.id, account.id)
+        token = generate_auth_token(user.id)
 
         conn
         |> put_status(:created) # http 201
-        |> render("auth.json", %{token: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+        |> render("auth.json", %{token: token})
 
       # User exists, needs activation
       user && !user.active ->
@@ -71,8 +69,7 @@ defmodule SealaxWeb.AuthController do
 
     with {:ok, token} <- AuthToken.decrypt_token(token),
          user         <- User.first(id: token["id"]),
-         user when not is_nil(user) <- user,
-         account      <- Account.find(user.account_id)
+         user when not is_nil(user) <- user
     do
       # Check if TFA key exists
       usertfa = Enum.find(user.tfa, fn tfa -> tfa.auth_key == key end)
@@ -82,16 +79,39 @@ defmodule SealaxWeb.AuthController do
         {:ok}        == tfa_match(user, usertfa)   ->
           User.update(user, recovery_code: nil)
 
-          token = generate_auth_token(user.id, account.id)
+          token = generate_auth_token(user.id)
 
           conn
           |> put_status(:created) # http 201
-          |> render("auth.json", %{token: token, account_id: account.id, appkey: user.appkey, appkey_salt: user.appkey_salt})
+          |> render("auth.json", %{token: token})
         true ->
           conn
           |> put_status(:unauthorized) # http 401
           |> render("error.json", %{error: "auth_fail"})
       end
+    else
+      _ ->
+      conn
+      |> put_status(:unauthorized) # http 401
+      |> render("error.json", %{error: "auth_fail"})
+    end
+  end
+
+  def index(conn, %{"token" => auth_token, "workspace_id" => workspace_id}) do
+    with {:ok, token} <- AuthToken.decrypt_token(auth_token),
+         user         <- User.first(id: token["id"]),
+         user when not is_nil(user) <- user,
+         workspace <- UserWorkspace.Query.get_workspace(%{user_id: user.id, workspace_id: workspace_id}),
+         workspace when not is_nil(workspace) <- workspace
+    do
+      {:ok, token} = AuthToken.generate_token(%{
+        id: user.id,
+        workspace_id: workspace.id
+      })
+
+      conn
+      |> put_status(:created)
+      |> token_response(token)
     else
       _ ->
       conn
@@ -162,18 +182,17 @@ defmodule SealaxWeb.AuthController do
          {:ok, token} <- AuthToken.decrypt_token(decoded_token),
          user         <- User.first(id: token["id"]),
          user when not is_nil(user) <- user,
-         account      <- Account.find(user.account_id),
          otp          <- UserOTP.find(token["otp_id"])
     do
       cond do
         token["updated_at"] == user.updated_at |> DateTime.to_unix(:microsecond) ->
-          token = generate_auth_token(user.id, account.id)
+          token = generate_auth_token(user.id)
 
           UserOTP.delete(otp.id)
 
           conn
           |> put_status(:created) # http 201
-          |> render("auth.json", %{token: token, account_id: account.id, appkey: otp.appkey, appkey_salt: ""})
+          |> render("auth.json", %{token: token})
         true ->
           conn
           |> put_status(:unauthorized)
@@ -187,8 +206,9 @@ defmodule SealaxWeb.AuthController do
     end
   end
 
-  defp generate_auth_token(user_id, account_id) do
-    token_content = %{id: user_id, account_id: account_id}
+  defp generate_auth_token(user_id) do
+    token_content = %{id: user_id}
+
     {:ok, token} = AuthToken.generate_token(token_content)
 
     token

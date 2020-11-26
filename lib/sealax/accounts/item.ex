@@ -1,7 +1,8 @@
 defmodule Sealax.Accounts.Item do
   use BaseModel, repo: Sealax.Repo
-  alias Sealax.Accounts.Account
+
   alias Sealax.Accounts.Item
+  alias Sealax.Accounts.Workspace
 
   use Ecto.Schema
   import Ecto.Changeset
@@ -11,25 +12,24 @@ defmodule Sealax.Accounts.Item do
   schema "items" do
     field :content, :string
     field :content_type, EctoHashedIndex
-    # field :content_index, EctoHashedIndex
     field :deleted, :boolean, default: false
-
+    
     timestamps()
-
-    belongs_to :account, Account, type: AccountHashId
+    
+    belongs_to :workspace, Workspace, type: WorkspaceHashId
   end
 
   @doc false
   def changeset(item, attrs) do
     item
-    |> cast(attrs, [:content, :content_type, :deleted, :account_id])
-    |> validate_required([:account_id])
+    |> cast(attrs, [:content, :content_type, :deleted, :workspace_id])
+    |> validate_required([:workspace_id])
   end
 
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:content, :content_type, :account_id])
-    |> validate_required([:account_id])
+    |> cast(params, [:content, :content_type, :workspace_id])
+    |> validate_required([:workspace_id])
   end
 
   def update_changeset(params) do
@@ -40,22 +40,22 @@ defmodule Sealax.Accounts.Item do
   defmodule Query do
     import Ecto.Query
 
-    def get_all_by_account_with_token(account_id, sync_token) do
+    def get_all_with_token(workspace_id, sync_token) do
       sync_token = sync_token |> DateTime.from_unix!(:microsecond)
       
-      query = get_all_query(account_id) |>
+      query = get_all_query(workspace_id) |>
         where([i], i.updated_at > ^sync_token)
 
       Sealax.Repo.all(query)
     end
 
-    def get_all_by_account(account_id) do
-      query = get_all_query(account_id)
+    def get_all(workspace_id) do
+      query = get_all_query(workspace_id)
 
       Sealax.Repo.all(query)
     end
 
-    defp get_all_query(account_id) do
+    defp get_all_query(workspace_id) do
       from i in Item,
         select: %{
           id: i.id,
@@ -64,7 +64,7 @@ defmodule Sealax.Accounts.Item do
           updated_at: i.updated_at
         },
         order_by: [desc: i.updated_at],
-        where: i.account_id == ^account_id
+        where: i.workspace_id == ^workspace_id
     end
   end
 
@@ -75,8 +75,8 @@ defmodule Sealax.Accounts.Item do
 
     @min_conflict_interval 1.0
 
-    def sync(account_id, item_id, item) do
-      server_item = Item.first(account_id: account_id, id: item_id)
+    def sync(workspace_id, item_id, item) do
+      server_item = Item.first(workspace_id: workspace_id, id: item_id)
 
       incoming_updated_at = case Map.get(item, "updated_at") do
         nil -> 0

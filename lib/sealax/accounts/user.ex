@@ -23,8 +23,6 @@ defmodule Sealax.Accounts.User do
     field :password_hint,        :string
     # field :password_backup,      EctoHashedPassword
     # field :password_hint_backup, :string
-    field :appkey_salt,          :string
-    field :appkey,               :string
     field :recovery_code,        :string
     field :settings,             :map
     field :active,               :boolean
@@ -50,8 +48,8 @@ defmodule Sealax.Accounts.User do
   @spec create_changeset(map) :: %Ecto.Changeset{}
   def create_changeset(params) do
     %__MODULE__{}
-    |> cast(params, [:email, :password, :password_hint, :settings, :appkey, :appkey_salt, :account_id, :verified])
-    |> validate_required([:email, :appkey, :appkey_salt, :account_id])
+    |> cast(params, [:email, :password, :password_hint, :settings, :account_id, :verified])
+    |> validate_required([:email, :account_id])
     |> validate_format(:email, ~r/@/)
     |> validate_length(:password, min: 64, max: 256)
     |> unique_constraint(:email)
@@ -66,7 +64,7 @@ defmodule Sealax.Accounts.User do
 
   def update_password_changeset(%User{} = user, params) do
     user
-    |> cast(params, [:password, :password_hint, :appkey, :appkey_salt])
+    |> cast(params, [:password, :password_hint])
     |> validate_length(:password, min: 64, max: 256)
   end
 
@@ -83,7 +81,7 @@ defmodule Sealax.Accounts.User do
   @spec create_test_changeset(%User{}, map) :: %Ecto.Changeset{}
   def create_test_changeset(%User{} = user, params) do
     user
-    |> cast(params, [:email, :password, :password_hint, :verified, :active, :settings, :appkey, :account_id, :appkey_salt])
+    |> cast(params, [:email, :password, :password_hint, :verified, :active, :settings, :account_id])
     |> cast_embed(:tfa)
   end
 

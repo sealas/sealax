@@ -21,7 +21,7 @@ defmodule Sealax.WorkspaceControllerTest do
     end
 
     test "updating workspaces", %{conn: conn, user: user} do
-      {:ok, %{user: other_user}} = create_user({:ok, %{}}, %{:create_user => true}, %{email: "pew@pew.com", password: "pewpew"})
+      {:ok, %{user: other_user}} = TestData.create_user({:ok, %{}}, %{:create_user => true}, %{email: "pew@pew.com", password: "pewpew"})
       {:ok, workspace} = Workspace.create(%{name: "Pew", owner_id: other_user.id})
 
       conn = put conn, Routes.workspace_path(conn, :update, workspace.id), %{name: "new name"}

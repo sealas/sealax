@@ -41,5 +41,9 @@ defmodule Sealax.Accounts.UserWorkspace do
       )
       |> Sealax.Repo.all
     end
+
+    def get_workspace(%{user_id: _user_id, workspace_id: _workspace_id} = params) do
+      UserWorkspace.first(params, preload: :workspace)
+    end
   end
 end
