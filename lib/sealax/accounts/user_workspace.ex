@@ -6,8 +6,8 @@ defmodule Sealax.Accounts.UserWorkspace do
   alias Sealax.Accounts.UserWorkspace
 
   schema "user_workspaces" do
-    field :appkey_salt, :string
     field :appkey,      :string
+    field :appkey_salt, :string
 
     belongs_to :user, User
     belongs_to :workspace, Workspace, type: WorkspaceHashId

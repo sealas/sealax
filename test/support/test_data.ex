@@ -8,7 +8,7 @@ defmodule TestData do
   @default_account %{name: "Test Account", slug: "test_account"}
   def default_account, do: @default_account
   
-  @default_user %{email: "default@user.com", password: "some password", active: true}
+  @default_user %{email: "default@user.test", password: "some password", active: true}
   def default_user, do: @default_user
 
   def create_user(setup, create_user, user \\ nil)

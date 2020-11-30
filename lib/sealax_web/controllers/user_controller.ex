@@ -36,10 +36,14 @@ defmodule SealaxWeb.UserController do
     end
   end
 
-  def create(conn, %{"appkey" => _appkey, "device_hash" => _device_hash} = params) do
+  @doc """
+  """
+  def create(conn, %{"appkey" => appkey, "workspace_id" => workspace_id, "device_hash" => device_hash}) do
     user = User.find(conn.assigns.user_id)
 
-    with {:ok, %UserOTP{}} <- UserOTP.create(params |> Map.put("user_id", user.id))
+    with user_otp <- UserOTP.first_or_create(%{user_id: user.id, device_hash: device_hash}),
+      cs <- UserOTP.update_changeset(user_otp, %{workspace_keys: [%{appkey: appkey, workspace_id: workspace_id} | user_otp.workspace_keys]}),
+      _ <- Sealax.Repo.update(cs)
     do
       conn
       |> render("status.json", status: "ok")

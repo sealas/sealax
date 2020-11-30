@@ -16,7 +16,7 @@ defmodule Sealax.UserControllerTest do
   end
 
   describe "update user" do
-    @describetag setup: true, create_user: true, auth_user: true
+    @describetag setup: true, create_user: true, create_workspace: true, auth_user: true
 
     test "update password and verify auth", %{conn: conn, user: user} do
       conn = post conn, Routes.auth_path(conn, :index), %{email: TestData.default_user().email, password: TestData.default_user().password}
@@ -32,9 +32,9 @@ defmodule Sealax.UserControllerTest do
       assert auth = json_response(conn, 401)
     end
 
-    test "add otp and verify auth", %{conn: conn} do
+    test "add otp and verify auth", %{conn: conn, workspace: workspace} do
       Process.sleep(500)
-      conn = post conn, Routes.user_path(conn, :create), @add_otp
+      conn = post conn, Routes.user_path(conn, :create), @add_otp |> Map.put(:workspace_id, workspace.id)
       assert json_response(conn, 200) == %{"status" => "ok"}
 
       conn = post conn, Routes.auth_path(conn, :index), %{email: TestData.default_user().email, device_hash: @add_otp.device_hash}
