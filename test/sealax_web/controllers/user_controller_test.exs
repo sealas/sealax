@@ -44,7 +44,8 @@ defmodule Sealax.UserControllerTest do
       assert json_response(conn, 401) == %{"error" => "token_spam"}
       
       conn = post conn, Routes.auth_path(conn, :index), %{otp_token: token}
-      assert %{"token" => token} = json_response(conn, 201)
+      assert %{"token" => token, "workspace_keys" => workspace_keys} = json_response(conn, 201)
+      assert List.first(workspace_keys)["workspace_id"] == workspace.id
     end
   end
 end

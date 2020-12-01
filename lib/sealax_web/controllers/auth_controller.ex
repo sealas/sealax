@@ -111,7 +111,7 @@ defmodule SealaxWeb.AuthController do
 
       conn
       |> put_status(:created)
-      |> token_response(token)
+      |> render("auth.json", %{token: token, workspace_id: workspace.id, appkey: workspace.appkey, appkey_salt: workspace.appkey_salt})
     else
       _ ->
       conn
@@ -192,7 +192,7 @@ defmodule SealaxWeb.AuthController do
 
           conn
           |> put_status(:created) # http 201
-          |> render("auth.json", %{token: token})
+          |> render("auth.json", %{token: token, workspace_keys: otp.workspace_keys})
         true ->
           conn
           |> put_status(:unauthorized)

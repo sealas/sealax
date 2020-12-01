@@ -3,7 +3,6 @@ defmodule Sealax.Accounts.UserOTP do
   import Ecto.Changeset
 
   alias Sealax.Accounts.User
-  alias Sealax.Accounts.UserOTP
   alias Sealax.Accounts.UserOTP.WorkspaceKeys
   alias Sealax.Accounts.Workspace
 

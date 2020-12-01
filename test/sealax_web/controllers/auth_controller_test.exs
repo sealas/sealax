@@ -59,7 +59,10 @@ defmodule Sealax.AuthControllerTest do
       conn = post conn, Routes.auth_path(conn, :index), %{token: auth_token, workspace_id: workspace.id}
 
       assert %{
-        "token" => auth_token
+        "token" => auth_token,
+        "workspace_id" => workspace_id,
+        "appkey" => appkey,
+        "appkey_salt" => appkey_salt
       } = json_response(conn, 201)
     end
   end
