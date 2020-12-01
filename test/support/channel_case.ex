@@ -17,9 +17,6 @@ defmodule SealaxWeb.ChannelCase do
 
   use ExUnit.CaseTemplate
 
-  alias Sealax.Repo
-  alias Sealax.Accounts.User
-
   using do
     quote do
       # Import conveniences for testing with channels

@@ -17,8 +17,6 @@ defmodule SealaxWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias Sealax.Repo
-
   using do
     quote do
       # Import conveniences for testing with connections

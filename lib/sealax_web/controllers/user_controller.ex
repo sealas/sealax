@@ -42,8 +42,10 @@ defmodule SealaxWeb.UserController do
     user = User.find(conn.assigns.user_id)
 
     with user_otp <- UserOTP.first_or_create(%{user_id: user.id, device_hash: device_hash}),
+      user_otp when not is_nil(user_otp) <- user_otp,
       cs <- UserOTP.update_changeset(user_otp, %{workspace_keys: [%{appkey: appkey, workspace_id: workspace_id} | user_otp.workspace_keys]}),
-      _ <- Sealax.Repo.update(cs)
+      _ <- Sealax.Repo.update(cs),
+      cs when not is_nil(cs) <- cs
     do
       conn
       |> render("status.json", status: "ok")
