@@ -6,6 +6,8 @@ defmodule SealaxWeb.ItemChannel do
   require Logger
 
   def join("item:" <> workspace_id, _payload, %{assigns: %{user: user}} = socket) do
+    {:ok, workspace_id} = WorkspaceHashId.dump(workspace_id)
+
     cond do
       workspace_id == user["workspace_id"] ->
         case check_token(user) do
