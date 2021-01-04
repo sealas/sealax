@@ -7,9 +7,10 @@ defmodule SealaxWeb.ItemChannel do
 
   def join("item:" <> workspace_id, _payload, %{assigns: %{user: user}} = socket) do
     {:ok, workspace_id} = WorkspaceHashId.dump(workspace_id)
+    {:ok, user_workspace_id} = WorkspaceHashId.dump(user["workspace_id"])
 
     cond do
-      workspace_id == user["workspace_id"] ->
+      workspace_id == user_workspace_id ->
         case check_token(user) do
           {:ok} ->
             send(self(), :after_join)
