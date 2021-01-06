@@ -23,11 +23,11 @@ defmodule SealaxWeb.WorkspaceController do
     user = User.find(conn.assigns.user_id)
 
     with {:ok, workspace}        <- Workspace.create(%{"name" => name, "owner_id" => user.id}),
-         {:ok, %UserWorkspace{}} <- UserWorkspace.create(%{"workspace_id" => workspace.id, "user_id" => user.id, "appkey" => appkey, "appkey_salt" => appkey_salt})
+         {:ok, user_workspace} <- UserWorkspace.create(%{"workspace_id" => workspace.id, "user_id" => user.id, "appkey" => appkey, "appkey_salt" => appkey_salt})
     do
       conn
       |> put_status(:created)
-      |> render("status.json", status: "ok")
+      |> render("workspace.json", workspace: %{appkey: user_workspace.appkey, appkey_salt: user_workspace.appkey_salt, name: workspace.name, workspace_id: user_workspace.workspace_id})
     else
       err -> conn
       |> put_status(:bad_request)

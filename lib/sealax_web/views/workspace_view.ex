@@ -22,7 +22,10 @@ defmodule SealaxWeb.WorkspaceView do
       appkey: appkey,
       appkey_salt: appkey_salt,
       name: name,
-      workspace_id: WorkspaceHashId.encode(workspace_id)
+      workspace_id: encode(workspace_id)
     }
   end
+
+  def encode(id) when is_binary(id), do: id
+  def encode(id), do: WorkspaceHashId.encode(id)
 end
