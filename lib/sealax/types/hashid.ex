@@ -17,11 +17,7 @@ defmodule HashId do
       def load(id) when is_integer(id) and id > 0, do: {:ok, encode(id)}
       def load(_), do: :error
 
-      def dump(hashid) when is_binary(hashid) do
-        {:ok, id} = decode(hashid)
-
-        {:ok, List.last(id)}
-      end
+      def dump(hashid) when is_binary(hashid), do: decode(hashid)
       def dump(id), do: Ecto.Type.dump(:integer, id)
 
       def encode(id) do
@@ -39,7 +35,14 @@ defmodule HashId do
           salt: Application.get_env(:sealax, SealaxWeb.Endpoint)[:hash_salt] <> unquote(salt)
         ])
 
-        Hashids.decode(s, hashid)
+        {:ok, id} = Hashids.decode(s, hashid)
+        
+        id = List.last(id)
+
+        cond do
+          is_integer(id) and encode(id) == hashid -> {:ok, id}
+          true -> {:error}
+        end
       end
     end
   end
