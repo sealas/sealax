@@ -20,6 +20,7 @@ defmodule HashId do
       def dump(hashid) when is_binary(hashid), do: decode(hashid)
       def dump(id), do: Ecto.Type.dump(:integer, id)
 
+      def encode(id) when is_binary(id), do: {:error, :only_integer}
       def encode(id) do
         s = Hashids.new([
           min_len: 8,
