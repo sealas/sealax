@@ -55,7 +55,7 @@ defmodule Sealax.MixProject do
       {:idna, "~> 6.0"},
       {:base_model, "~> 0.3"},
       {:authtoken, "~> 0.3"},
-      {:argon2_elixir, "~> 2.3.0"},
+      {:argon2_elixir, "~> 2.4.0"},
       {:yubico, "~> 0.1"},
     ]
   end
